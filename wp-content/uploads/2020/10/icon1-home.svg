@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="80" height="80" viewBox="0 0 80 80">
+  <defs>
+    <clipPath id="clip-path">
+      <rect id="Rectángulo_72" data-name="Rectángulo 72" width="80" height="80" transform="translate(336 761)" opacity="0.33"/>
+    </clipPath>
+  </defs>
+  <g id="Enmascarar_grupo_3" data-name="Enmascarar grupo 3" transform="translate(-336 -761)" clip-path="url(#clip-path)">
+    <g id="favorito" transform="translate(344 769)">
+      <path id="Trazado_79" data-name="Trazado 79" d="M55.135,9.46A32.3,32.3,0,0,0,9.46,55.136,32.3,32.3,0,0,0,55.135,9.46ZM32.3,60.81A28.513,28.513,0,1,1,60.81,32.3,28.545,28.545,0,0,1,32.3,60.81Z" transform="translate(0 0)" fill="#133f77"/>
+      <path id="Trazado_80" data-name="Trazado 80" d="M132.542,96.5a1.892,1.892,0,0,0-1.528-1.288l-12.092-1.757L113.515,82.5a1.892,1.892,0,0,0-3.394,0l-5.408,10.957L92.621,95.216a1.892,1.892,0,0,0-1.049,3.228l8.75,8.529-2.066,12.043A1.892,1.892,0,0,0,101,121.011l10.815-5.686,10.815,5.686a1.892,1.892,0,0,0,2.746-1.995l-2.066-12.043,8.75-8.529A1.892,1.892,0,0,0,132.542,96.5Zm-12.583,8.453a1.893,1.893,0,0,0-.544,1.675L121,115.876l-8.3-4.364a1.892,1.892,0,0,0-1.761,0l-8.3,4.364,1.585-9.244a1.893,1.893,0,0,0-.544-1.675L96.96,98.41l9.282-1.349a1.893,1.893,0,0,0,1.425-1.035l4.151-8.411,4.151,8.411a1.893,1.893,0,0,0,1.425,1.035l9.282,1.349Z" transform="translate(-79.52 -71.171)" fill="#133f77"/>
+    </g>
+  </g>
+</svg>

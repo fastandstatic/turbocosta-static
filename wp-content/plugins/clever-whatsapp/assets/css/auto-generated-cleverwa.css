@@ -1,0 +1,67 @@
+.cleverwa-container .cleverwa-toggle,
+.cleverwa-container .cleverwa-mobile-close,
+.cleverwa-container .cleverwa-description,
+.cleverwa-container .cleverwa-description a {
+	background-color: #0dc152;
+	color: rgba(255, 255, 255, 1);
+}
+.cleverwa-container .cleverwa-description p {
+	color: rgba(255, 255, 255, 1);
+}
+.cleverwa-container .cleverwa-toggle svg {
+	fill: rgba(255, 255, 255, 1);
+}
+.cleverwa-container .cleverwa-box {
+	background-color: rgba(255, 255, 255, 1);
+}
+.cleverwa-container .cleverwa-gdpr,
+.cleverwa-container .cleverwa-account {
+	color: rgba(85, 85, 85, 1);
+}
+.cleverwa-container .cleverwa-account:hover {
+	background-color: rgba(245, 245, 245, 1);
+	border-color: rgba(245, 245, 245, 1);
+	color: rgba(85, 85, 85, 1);
+}
+.cleverwa-box .cleverwa-account,
+.cleverwa-container .cleverwa-account.cleverwa-offline:hover {
+	border-color: #f5f5f5;
+}
+.cleverwa-container .cleverwa-account.cleverwa-offline:hover {
+	border-radius: 0;
+}
+
+.cleverwa-container .cleverwa-box:before,
+.cleverwa-container .cleverwa-box:after {
+	background-color: rgba(255, 255, 255, 1);
+	border-color: rgba(255, 255, 255, 1);
+}
+.cleverwa-container .cleverwa-close:before,
+.cleverwa-container .cleverwa-close:after {
+	background-color: rgba(255, 255, 255, 1);
+}
+
+.cleverwa-button {
+	background-color: #0dc152 !important;
+	color: #ffffff !important;
+}
+.cleverwa-button:hover {
+	background-color: #0dc152 !important;
+	color: #ffffff !important;
+}
+
+.cleverwa-button.cleverwa-offline,
+.cleverwa-button.cleverwa-offline:hover {
+	background-color: #a0a0a0 !important;
+	color: #ffffff !important;
+}
+
+@keyframes toast {
+	from {
+		background: rgba(255, 0, 0, 1);
+		}
+
+	to {
+		background: rgba(255, 255, 255, 1);
+		}
+}

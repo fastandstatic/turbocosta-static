@@ -1,0 +1,482 @@
+.cleverwa-container,
+.cleverwa-button {
+	font-family: sans-serif;
+	font-size: 14px;
+	line-height: 1.5em;
+	}
+.cleverwa-container *,
+.cleverwa-button * {
+	-webkit-box-sizing: border-box;
+	 -khtml-box-sizing: border-box;
+	   -moz-box-sizing: border-box;
+		-ms-box-sizing: border-box;
+			box-sizing: border-box;
+	}
+	.cleverwa-container p:first-child {
+		margin-top: 0;
+		}
+	.cleverwa-container p:last-child {
+		margin-bottom: 0;
+		}
+	.cleverwa-container img,
+	.cleverwa-button img {
+		max-width: 100%;
+		max-height: 100%;
+		vertical-align: top;
+		}
+	.cleverwa-container a,
+	.cleverwa-button {
+		color: #333;
+		text-decoration: none;
+		}
+		.cleverwa-container a:hover,
+		.cleverwa-button:hover {
+			text-decoration: none;
+			}
+		.cleverwa-container a:focus,
+		.cleverwa-container a:active {
+			outline: 0;
+			-moz-outline-style: none;
+			}
+.cleverwa-clearfix:before,
+.cleverwa-clearfix:after {
+	content: '';
+	display: block;
+	clear: both;
+	}
+
+.cleverwa-toggle,
+.cleverwa-box .cleverwa-description,
+.cleverwa-button,
+.cleverwa-mobile-close {
+	background: #0DC152;
+	color: white;
+	}
+	.cleverwa-box .cleverwa-description a {
+		color: inherit;
+		text-decoration: underline;
+		font-weight: bold;
+		}
+	
+.cleverwa-toggle,
+.cleverwa-box {
+	z-index: 9999999;
+	}
+
+.cleverwa-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 40px;
+	white-space: nowrap;
+	line-height: 100%;
+	padding: 12px 20px;
+	border-radius: 50px;
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	cursor: pointer;
+	box-shadow: 0 1px 6px rgba(0, 0, 0, .06),0 2px 32px rgba(0, 0, 0, .16);
+	transition: box-shadow 80ms ease-in-out,width .4s ease .2s;
+	}
+	.cleverwa-toggle:hover {
+		box-shadow: 0 2px 8px rgba(0, 0, 0, .09),0 4px 40px rgba(0, 0, 0, .24) ;
+		}
+	
+	.cleverwa-toggle svg {
+		fill: white;
+		display: inline-block;
+		margin-right: 5px;
+		margin-left: -3px;
+		-moz-user-select: none;
+		}
+
+.cleverwa-mobile-close {
+	display: none;
+	}
+
+.cleverwa-box {
+	position: fixed;
+	bottom: 80px;
+	right: 20px;
+	background: white;
+	max-width: 360px;
+	width: 100%;
+	border-radius: 6px;
+	box-shadow: 0 8px 25px -5px rgba(45, 62, 79, .15);
+	visibility: hidden;
+	opacity: 0;
+	transform: translateY(50px) scale(0.9);
+	background: white;
+	transition: all .3s;
+	}
+	.cleverwa-box.cleverwa-js-ready {
+		display: block;
+		}
+	.cleverwa-show .cleverwa-box {
+		visibility: visible;
+		opacity: 1;
+		transform: translateY(0) scale(1);
+		}
+		.cleverwa-container .cleverwa-box:before,
+		.cleverwa-container .cleverwa-box:after {
+			content: '';
+			position: absolute;
+			bottom: -7px;
+			right: 22px;
+			width: 13px;
+			height: 13px;
+			background: white;
+			transform: rotate(45deg);
+			z-index: -1;
+			border: 1px solid #f5f5f5;
+			box-shadow: 3px 3px 3px rgba(0, 0, 0, .02);
+			}
+		.cleverwa-container .cleverwa-box:before {
+			box-shadow: none;
+			background: white;
+			transform: none;
+			bottom: 0;
+			width: 19px;
+			right: 17px;
+			border-color: white;
+			}
+	.cleverwa-box .cleverwa-description {
+		padding: 15px 40px 15px 20px;
+		border-radius: 6px 6px 0 0;
+		}
+	.cleverwa-box .cleverwa-close {
+		display: block;
+		width: 15px;
+		height: 15px;
+		position: absolute;
+		top: 7px;
+		right: 7px;
+		opacity: .5;
+		visibility: hidden;
+		transition: opacity .3s;
+		}
+		.cleverwa-box .cleverwa-description + .cleverwa-close {
+			visibility: visible;
+			}
+		.cleverwa-box .cleverwa-close:hover {
+			cursor: pointer;
+			opacity: 1;
+			}
+		.cleverwa-box .cleverwa-close:before,
+		.cleverwa-box .cleverwa-close:after {
+			content: '';
+			display: block;
+			background: white;
+			width: 15px;
+			height: 3px;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translateY(-50%) translateX(-50%) rotate(45deg);
+			}
+		.cleverwa-box .cleverwa-close:after {
+			transform: translateY(-50%) translateX(-50%) rotate(-45deg);
+			}
+	.cleverwa-box .cleverwa-people {
+		overflow: auto;
+		padding: 10px;
+		}
+	.cleverwa-box .cleverwa-account {
+		padding: 10px;
+		border-top: 1px solid #f5f5f5;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+		position: relative;
+		}
+		.cleverwa-box .cleverwa-account:first-child {
+			border-top: 0;
+			}
+		.cleverwa-box .cleverwa-account:hover {
+			background: #f7f7f7;
+			border-radius: 6px;
+			}
+		.cleverwa-box .cleverwa-account.cleverwa-offline:hover {
+			background: inherit;
+			}
+		.cleverwa-box .cleverwa-account:not(.cleverwa-offline):hover + .cleverwa-account {
+			border-color: transparent !important;
+			}
+		
+	.cleverwa-box .cleverwa-face {
+		float: left;
+		width: 60px;
+		height: 60px;
+		position: relative;
+		}
+		.cleverwa-box .cleverwa-no-image .cleverwa-face {
+			background: transparent url('./../images/logo-green-small.png') center center no-repeat;
+			background-size: cover;
+			}
+		.cleverwa-box .cleverwa-face img {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			border-radius: 50px;
+			transform: translateY(-50%) translateX(-50%);
+			}
+		.cleverwa-box .cleverwa-offline .cleverwa-face {
+			filter: gray;
+			-webkit-filter: grayscale(1);
+			filter: grayscale(1);
+			}
+		.cleverwa-box .cleverwa-no-image .cleverwa-face:after {
+			content: none;
+			}
+	.cleverwa-box .cleverwa-info {
+		float: left;
+		width: calc(100% - 40px);
+		padding-left: 10px;
+		position: relative;
+		}
+	.cleverwa-box .cleverwa-info:after {
+		content:url('./../images/logo-green-nobg.png');
+		width: 30px;
+		height: 30px;
+		display: block;
+		text-align: right;
+		position: absolute;
+		right: 0;
+		top: 50%;
+		transform: translateY(-50%);
+	}
+	.cleverwa-box .cleverwa-offline .cleverwa-info:after {
+		filter: gray;
+		-webkit-filter: grayscale(1);
+		filter: grayscale(1);
+	}
+.cleverwa-box .cleverwa-title,
+		.cleverwa-box .cleverwa-offline-text {
+			font-size: 12px;
+			line-height: 1.5em;
+			opacity: .6;
+			display: block;
+			}
+		.cleverwa-box .cleverwa-name {
+			display: block;
+			font-weight: bold;
+			}
+	
+	/* GDPR consent confirmation */
+	.cleverwa-box .cleverwa-gdpr {
+		overflow: auto;
+		font-size: 12px;
+		line-height: 1.5em;
+		padding: 5px 10px 15px;
+		color: inherit;
+		}
+		.cleverwa-box .cleverwa-gdpr p {
+			margin: 1em 0;
+			}
+			.cleverwa-box .cleverwa-gdpr p:first-child {
+				margin-top: 0;
+				}
+			.cleverwa-box .cleverwa-gdpr p:last-child {
+				margin-bottom: 0;
+				}
+		.cleverwa-box .cleverwa-gdpr a {
+			text-decoration: underline;
+			color: inherit;
+			}
+		.cleverwa-box .cleverwa-gdpr .cleverwa-confirmation {
+			display: flex;
+			padding: 5px;
+			margin: -5px;
+			border-radius: 4px;
+			}
+		.cleverwa-box .cleverwa-gdpr .cleverwa-confirmation.cleverwa-blink {
+			animation: 1s 1 alternate toast;
+			}
+			@keyframes toast {
+				from {
+					background: rgba(255, 0, 0, 1);
+					}
+				
+				to {
+					background: rgba(255, 255, 255, 0);
+					}
+				}
+		.cleverwa-box .cleverwa-gdpr .cleverwa-confirmation input[type="checkbox"] {
+			display: inline-block;
+			margin-right: 5px;
+			vertical-align: middle;
+			}
+
+/* Left side */
+.cleverwa-left-side .cleverwa-toggle,
+.cleverwa-left-side .cleverwa-box {
+	right: auto;
+	left: 20px;
+	}
+.cleverwa-container.cleverwa-left-side .cleverwa-box:before,
+.cleverwa-container.cleverwa-left-side .cleverwa-box:after {
+	right: auto;
+	left: 22px;
+	}
+
+.cleverwa-button {
+	display: inline-flex;
+	width: auto;
+	align-items: center;
+	justify-content: center;
+	padding: 5px;
+	border-radius: 6px;
+	position: relative;
+	transition: all .3s;
+	text-decoration: none !important;
+	}
+	.cleverwa-button.cleverwa-offline {
+		background: #a0a0a0;
+		}
+	.cleverwa-button.cleverwa-offline img {
+		filter: gray;
+		-webkit-filter: grayscale(1);
+		filter: grayscale(1);
+		}
+	.cleverwa-round,
+	.cleverwa-round img {
+		border-radius: 50px;
+		}
+	.cleverwa-button:hover {
+		box-shadow: 0 8px 25px -5px rgba(45, 62, 79, .3);
+		transform: translateY(-3px);
+		}
+		.cleverwa-button.cleverwa-offline:hover {
+			box-shadow: none;
+			transform: none;
+			}
+	.cleverwa-button .cleverwa-avatar {
+		flex: 0 0 auto;
+		width: 50px;
+		height: 50px;
+		border-radius: 4px;
+		overflow: hidden;
+		position: relative;
+		}
+	.cleverwa-button svg {
+		fill: white;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translateY(-50%) translateX(calc(-50% + 4px));
+		}
+	.cleverwa-button .cleverwa-text {
+		flex: 1 1 auto;
+		padding: 0 20px 0 10px;
+		display: block;
+		}
+	.cleverwa-button .cleverwa-profile,
+	.cleverwa-button .cleverwa-offline-text {
+		font-size: 12px;
+		line-height: 1.4em;
+		display: block;
+		opacity: .80;
+		}
+	.cleverwa-button .cleverwa-copy {
+		font-weight: bold;
+		display: block;
+		}
+
+@media screen and (min-width : 783px) {
+	
+	.cleverwa-flag:after {
+		content: 'desktop';
+		display: none;
+		}
+	
+	.cleverwa-hide-on-large-screen {
+		display: none !important;
+		}
+	
+	.cleverwa-round-toggle-on-desktop .cleverwa-toggle {
+		border-radius: 50px;
+		width: 60px;
+		height: 60px;
+		}
+		.cleverwa-round-toggle-on-desktop .cleverwa-toggle .cleverwa-text {
+			display: none;
+			}
+		.cleverwa-round-toggle-on-desktop .cleverwa-toggle svg {
+			margin: 0;
+			width: 30px;
+			height: 30px;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translateY(-50%) translateX(-50%);
+			}
+		.cleverwa-round-toggle-on-desktop .cleverwa-box {
+			bottom: 100px;
+			}
+	
+	}
+
+@media screen and (max-width : 782px) {
+	
+	.cleverwa-flag:after {
+		content: 'mobile';
+		display: none;
+		}
+	
+	.cleverwa-hide-on-small-screen {
+		display: none !important;
+		}
+	
+	.cleverwa-round-toggle-on-mobile .cleverwa-toggle {
+		border-radius: 50px;
+		width: 60px;
+		height: 60px;
+		}
+		.cleverwa-round-toggle-on-mobile .cleverwa-toggle .cleverwa-text {
+			display: none;
+			}
+		.cleverwa-round-toggle-on-mobile .cleverwa-toggle svg {
+			margin: 0;
+			width: 30px;
+			height: 30px;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translateY(-50%) translateX(-50%);
+			}
+		.cleverwa-round-toggle-on-mobile .cleverwa-box {
+			bottom: 100px;
+			}
+	
+	}
+
+@media screen and (max-width : 414px) {
+	.cleverwa-flag:after {
+		content: 'small';
+		display: none;
+		}
+	
+	/* Mobile Center */
+	.cleverwa-mobile-center .cleverwa-toggle {
+		left: 50%;
+		right: auto;
+		transform: translateX(-50%);
+		}
+		.cleverwa-mobile-center  .cleverwa-box:before,
+		.cleverwa-mobile-center  .cleverwa-box:after {
+			left: auto !important;
+			right: 50% !important;
+			transform: translateX(50%) rotate(45deg) !important;
+			}
+		.cleverwa-mobile-center  .cleverwa-box:before {
+			transform: translateX(50%) !important;
+			right: 50% !important;
+			}
+	
+	.cleverwa-box {
+		width: 100% !important;
+		max-width: calc(100% - 40px) !important;
+		}
+	}
