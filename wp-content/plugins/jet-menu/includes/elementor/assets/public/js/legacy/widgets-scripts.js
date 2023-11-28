@@ -20,7 +20,7 @@
 
 		widgetMegaMenu: function( $scope ) {
 			let $desktopTarget = $scope.find( '.jet-menu-container' ),
-				$mobileTarget  = $scope.find( '.jet-mobile-menu-single' );
+				$mobileTarget  = $scope.find( '.jet-mobile-menu' );
 
 			if ( $desktopTarget[0] ) {
 				let rollUp                   = false,

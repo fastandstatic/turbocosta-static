@@ -221,7 +221,7 @@
 
 			$.ajax( {
 				type: 'GET',
-				url: window.jetMenuPublicSettings.templateApiUrl,
+				url: window.jetMenuPublicSettings.getElementorTemplateApiUrl,
 				dataType: 'json',
 				data: {
 					'id': templateId,
@@ -231,9 +231,9 @@
 					jqXHR.setRequestHeader( 'X-WP-Nonce', window.jetMenuPublicSettings.restNonce );
 				},
 				success: function( responce, textStatus, jqXHR ) {
-					var templateContent   = responce['template_content'],
-						templateScripts   = responce['template_scripts'],
-						templateStyles    = responce['template_styles'];
+					var templateContent   = responce['content'],
+						templateScripts   = responce['scripts'],
+						templateStyles    = responce['styles'];
 
 					for ( var scriptHandler in templateScripts ) {
 						jetMenu.addedAssetsPromises.push( jetMenu.loadScriptAsync( scriptHandler, templateScripts[ scriptHandler ] ) );
@@ -988,7 +988,7 @@
 					},
 
 					isTemplateDefine: function() {
-						return false !== this.itemDataObject.elementorTemplateId ? true : false;
+						return false !== this.itemDataObject.megaTemplateId ? true : false;
 					},
 
 					isSub: function() {
@@ -1032,6 +1032,12 @@
 						let badgeVisible = this.$root.menuOptions.itemBadgeVisible;
 
 						return false === badgeVisible || '' === this.itemDataObject.badgeText || ! this.itemDataObject.badgeText ? false : true;
+					},
+
+					isLabelVisible: function() {
+						let labelVisible = ! this.itemDataObject.hideItemText;
+
+						return false === labelVisible || '' === this.itemDataObject.name || ! this.itemDataObject.name ? false : true;
 					},
 
 					isDescVisible: function() {
@@ -1099,7 +1105,7 @@
 
 						} else {
 
-							if ( ! this.itemDataObject.elementorContent ) {
+							if ( ! this.itemDataObject.megaContent ) {
 								this.getElementorTemplate();
 							} else {
 
@@ -1107,7 +1113,7 @@
 									menuUniqId: this.$root.menuOptions.menuUniqId,
 									id: this.itemDataObject.id,
 									name: this.itemDataObject.name,
-									elementorContent: this.itemDataObject.elementorContent
+									megaContent: this.itemDataObject.megaContent
 								} );
 							}
 						}
@@ -1118,10 +1124,10 @@
 
 						vueInstance.ajaxRequest = $.ajax( {
 							type: 'GET',
-							url: window.jetMenuPublicSettings.templateApiUrl,
+							url: window.jetMenuPublicSettings.getElementorTemplateApiUrl,
 							dataType: 'json',
 							data: {
-								'id': vueInstance.itemDataObject.elementorTemplateId,
+								'id': vueInstance.itemDataObject.megaTemplateId,
 								'dev': window.jetMenuPublicSettings.devMode
 							},
 							beforeSend: function( jqXHR, ajaxSettings ) {
@@ -1135,9 +1141,9 @@
 								jqXHR.setRequestHeader( 'X-WP-Nonce', window.jetMenuPublicSettings.restNonce );
 							},
 							success: function( responce, textStatus, jqXHR ) {
-								var templateContent   = responce['template_content'],
-								    templateScripts   = responce['template_scripts'],
-								    templateStyles    = responce['template_styles'];
+								var templateContent   = responce['content'],
+								    templateScripts   = responce['scripts'],
+								    templateStyles    = responce['styles'];
 
 								for ( var scriptHandler in templateScripts ) {
 									jetMenu.addedAssetsPromises.push( jetMenu.loadScriptAsync( scriptHandler, templateScripts[ scriptHandler ] ) );
@@ -1149,13 +1155,13 @@
 
 								vueInstance.templateLoadStatus = false;
 
-								vueInstance.itemDataObject.elementorContent = templateContent;
+								vueInstance.itemDataObject.megaContent = templateContent;
 
 								jetMenu.eventBus.$emit( 'showTemplateContent', {
 									menuUniqId: vueInstance.$root.menuOptions.menuUniqId,
 									id: vueInstance.itemDataObject.id,
 									name: vueInstance.itemDataObject.name,
-									elementorContent: vueInstance.itemDataObject.elementorContent
+									megaContent: vueInstance.itemDataObject.megaContent
 								} );
 							}
 						} );
@@ -1209,7 +1215,35 @@
 						}
 					}
 
-					this.ajaxPromises.push(
+					let menuInstanceRenderData = false,
+						renderDataElement = document.getElementById( 'jetMenuMobileWidgetRenderData' + this.$root.menuOptions.menuUniqId );
+
+					if ( renderDataElement ) {
+						eval( renderDataElement.innerHTML );
+						menuInstanceRenderData = window[ 'jetMenuMobileWidgetRenderData' + this.$root.menuOptions.menuUniqId ] || false;
+					}
+
+					if ( menuInstanceRenderData ) {
+						this.itemsRawData = menuInstanceRenderData['items'];
+
+						const headerTemplateData = menuInstanceRenderData.headerTemplateData || false,
+							beforeTemplateData = menuInstanceRenderData.beforeTemplateData || false,
+							afterTemplateData = menuInstanceRenderData.afterTemplateData || false;
+
+						if ( headerTemplateData ) {
+							this.headerContent = headerTemplateData.content;
+						}
+
+						if ( beforeTemplateData ) {
+							this.beforeContent = beforeTemplateData.content;
+						}
+
+						if ( afterTemplateData ) {
+							this.afterContent = afterTemplateData.content;
+						}
+					}
+
+					/*this.ajaxPromises.push(
 						new Promise( function( resolve, reject ) {
 							$.ajax( {
 								type: 'GET',
@@ -1232,14 +1266,14 @@
 								}
 							} );
 						} )
-					);
+					);*/
 
-					if ( 0 !== +this.headerTemplate ) {
+					/*if ( 0 !== +this.headerTemplate ) {
 						this.ajaxPromises.push(
 							new Promise( function( resolve, reject ) {
 								$.ajax( {
 									type: 'GET',
-									url: window.jetMenuPublicSettings.templateApiUrl,
+									url: window.jetMenuPublicSettings.getElementorTemplateApiUrl,
 									dataType: 'json',
 									data: {
 										'id': vueInstance.headerTemplate,
@@ -1249,9 +1283,9 @@
 										jqXHR.setRequestHeader( 'X-WP-Nonce', window.jetMenuPublicSettings.restNonce );
 									},
 									success: function( responce, textStatus, jqXHR ) {
-										let templateContent = responce['template_content'],
-										    templateScripts = responce['template_scripts'],
-										    templateStyles  = responce['template_styles'];
+										let templateContent = responce['content'],
+										    templateScripts = responce['scripts'],
+										    templateStyles  = responce['styles'];
 
 										for ( let scriptHandler in templateScripts ) {
 											jetMenu.addedAssetsPromises.push( jetMenu.loadScriptAsync( scriptHandler, templateScripts[ scriptHandler ] ) );
@@ -1276,7 +1310,7 @@
 							new Promise( function( resolve, reject ) {
 								$.ajax( {
 									type: 'GET',
-									url: window.jetMenuPublicSettings.templateApiUrl,
+									url: window.jetMenuPublicSettings.getElementorTemplateApiUrl,
 									dataType: 'json',
 									data: {
 										'id': vueInstance.beforeTemplate,
@@ -1286,9 +1320,9 @@
 										jqXHR.setRequestHeader( 'X-WP-Nonce', window.jetMenuPublicSettings.restNonce );
 									},
 									success: function( responce, textStatus, jqXHR ) {
-										let templateContent = responce['template_content'],
-										    templateScripts = responce['template_scripts'],
-										    templateStyles  = responce['template_styles'];
+										let templateContent = responce['content'],
+										    templateScripts = responce['scripts'],
+										    templateStyles  = responce['styles'];
 
 										for ( let scriptHandler in templateScripts ) {
 											jetMenu.addedAssetsPromises.push( jetMenu.loadScriptAsync( scriptHandler, templateScripts[ scriptHandler ] ) );
@@ -1312,7 +1346,7 @@
 							new Promise( function( resolve, reject ) {
 								$.ajax( {
 									type: 'GET',
-									url: window.jetMenuPublicSettings.templateApiUrl,
+									url: window.jetMenuPublicSettings.getElementorTemplateApiUrl,
 									dataType: 'json',
 									data: {
 										'id': vueInstance.afterTemplate,
@@ -1322,9 +1356,9 @@
 										jqXHR.setRequestHeader( 'X-WP-Nonce', window.jetMenuPublicSettings.restNonce );
 									},
 									success: function( responce, textStatus, jqXHR ) {
-										let templateContent = responce['template_content'],
-										    templateScripts = responce['template_scripts'],
-										    templateStyles  = responce['template_styles'];
+										let templateContent = responce['content'],
+										    templateScripts = responce['scripts'],
+										    templateStyles  = responce['styles'];
 
 										for ( let scriptHandler in templateScripts ) {
 											jetMenu.addedAssetsPromises.push( jetMenu.loadScriptAsync( scriptHandler, templateScripts[ scriptHandler ] ) );
@@ -1340,7 +1374,7 @@
 								} );
 							} )
 						);
-					}
+					}*/
 
 					this.instanceLoadStatus = true;
 
@@ -1368,12 +1402,17 @@
 							return;
 						}
 
-						vueInstance.itemTemplateContent = payLoad.elementorContent;
+						vueInstance.itemTemplateContent = payLoad.megaContent.content;
 						vueInstance.templateVisible = true;
 						vueInstance.breadcrumbsData.push( payLoad.name );
 						vueInstance.animation = 'items-next-animation';
 
-						vueInstance.showTemplateContent();
+						const templateData = {
+							content: payLoad.megaContent.content,
+							contentElements: payLoad.megaContent.contentElements,
+						}
+
+						vueInstance.showTemplateContent( templateData );
 					} );
 
 					jetMenu.eventBus.$on( 'closeMenu', function( payLoad ) {
@@ -1529,7 +1568,7 @@
 					},
 
 					backIcon: function() {
-						let backIcon = this.$root.refsHtml.closeIcon || '',
+						let backIcon = this.$root.refsHtml.backIcon || '',
 						    backText = '' !== this.$root.menuOptions.backText ? '<span>' + this.$root.menuOptions.backText + '</span>' : '',
 						    backHtml = backIcon + backText;
 
@@ -1601,13 +1640,13 @@
 						}
 					},
 
-					showTemplateContent: function() {
+					showTemplateContent: function( templateData ) {
 						let vueInstance = this;
 
 						this.$nextTick( function() {
 							let $templateContainer = $( vueInstance.$refs['template-content'] ).find( '.jet-mobile-menu__template-content' );
 
-							jetMenu.elementorContentRender( $templateContainer );
+							jetMenu.elementorContentRender( $templateContainer, templateData.content );
 						} );
 					},
 

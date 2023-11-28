@@ -1,0 +1,61 @@
+.elementor-10607 .elementor-element.elementor-element-a61f456:not(.elementor-motion-effects-element-type-background), .elementor-10607 .elementor-element.elementor-element-a61f456 > .elementor-motion-effects-container > .elementor-motion-effects-layer{background-color:#FAFAFA;}.elementor-10607 .elementor-element.elementor-element-a61f456{transition:background 0.3s, border 0.3s, border-radius 0.3s, box-shadow 0.3s;margin-top:0px;margin-bottom:0px;padding:70px 0px 50px 0px;}.elementor-10607 .elementor-element.elementor-element-a61f456 > .elementor-background-overlay{transition:background 0.3s, border-radius 0.3s, opacity 0.3s;}.elementor-10607 .elementor-element.elementor-element-d8ed352{text-align:left;}.elementor-10607 .elementor-element.elementor-element-d8ed352 .elementor-heading-title{color:#133F77;font-family:"Montserrat", Sans-serif;font-size:32px;font-weight:700;}.elementor-10607 .elementor-element.elementor-element-d8ed352 > .elementor-widget-container{margin:0px 0px 40px 0px;}.elementor-10607 .elementor-element.elementor-element-8a6d6e6{text-align:justify;color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;letter-spacing:0px;}.elementor-10607 .elementor-element.elementor-element-0afca15 .elementor-heading-title{color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;font-weight:bold;letter-spacing:0px;}.elementor-10607 .elementor-element.elementor-element-0afca15 > .elementor-widget-container{margin:0px 0px 13px 0px;}.elementor-10607 .elementor-element.elementor-element-6a6fc4c{text-align:justify;color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;letter-spacing:0px;}.elementor-10607 .elementor-element.elementor-element-db86b3e .elementor-heading-title{color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;font-weight:bold;letter-spacing:0px;}.elementor-10607 .elementor-element.elementor-element-db86b3e > .elementor-widget-container{margin:0px 0px 13px 0px;}.elementor-10607 .elementor-element.elementor-element-59eee89{text-align:justify;color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;letter-spacing:0px;}.elementor-10607 .elementor-element.elementor-element-d8adab6 .elementor-heading-title{color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;font-weight:bold;letter-spacing:0px;}.elementor-10607 .elementor-element.elementor-element-d8adab6 > .elementor-widget-container{margin:0px 0px 13px 0px;}.elementor-10607 .elementor-element.elementor-element-75ab6b1{text-align:justify;color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;letter-spacing:0px;}.elementor-10607 .elementor-element.elementor-element-5af9788 .elementor-heading-title{color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;font-weight:bold;letter-spacing:0px;}.elementor-10607 .elementor-element.elementor-element-5af9788 > .elementor-widget-container{margin:0px 0px 13px 0px;}.elementor-10607 .elementor-element.elementor-element-1fcc40e{text-align:justify;color:#313131;font-family:"Montserrat", Sans-serif;font-size:16px;letter-spacing:0px;}@media(min-width:768px){.elementor-10607 .elementor-element.elementor-element-30ec3ce{width:10%;}.elementor-10607 .elementor-element.elementor-element-ea6e1f3{width:79.333%;}.elementor-10607 .elementor-element.elementor-element-65dadcd{width:10%;}}@media(max-width:767px){.elementor-10607 .elementor-element.elementor-element-a61f456{padding:50px 20px 0px 20px;}}/* Start custom CSS for heading, class: .elementor-element-d8ed352 */#terminos-uso h2:before {
+    content: "";
+    width: 60%;
+    height: 1px;
+    background: #133F77;
+    position: absolute;
+    top: 20px;
+    right: 0px;
+}
+
+@media (max-width: 1440px) {
+    #terminos-uso h2 {
+        font-size: 32px;
+    }
+    #terminos-uso h2:before {
+    width: 51%;
+    top: 18px;
+    }
+}
+@media (max-width: 1024px) {
+    #terminos-uso h2 {
+        font-size: 30px;
+    }
+    #terminos-uso h2:before {
+    width: 49%;
+    }
+}
+@media (max-width: 768px) {
+    #terminos-uso h2 {
+        font-size: 26px;
+    }
+    #terminos-uso h2:before {
+    width: 40%;
+    top: 15px;
+    }
+}
+@media (max-width: 600px) {
+    #terminos-uso h2:before {
+    width: 34%;
+    }
+}
+@media (max-width: 425px) {
+    #terminos-uso h2:before {
+    width: 4%;
+    }
+}
+@media (max-width: 375px) {
+    #terminos-uso h2:before {
+    width: 44%;
+    }
+}
+@media (max-width: 360px) {
+    #terminos-uso h2:before {
+    width: 42%;
+    }
+}
+@media (max-width: 320px) {
+    #terminos-uso h2:before {
+    width: 30%;
+    }
+}/* End custom CSS */
