@@ -1,0 +1,62 @@
+.elementor-15195 .elementor-element.elementor-element-34b7f7b{--display:flex;--background-transition:0.3s;--margin-block-start:0px;--margin-block-end:0px;--margin-inline-start:0px;--margin-inline-end:0px;--padding-block-start:5em;--padding-block-end:0em;--padding-inline-start:0em;--padding-inline-end:0em;}.elementor-15195 .elementor-element.elementor-element-c299720{--display:flex;--background-transition:0.3s;}.elementor-15195 .elementor-element.elementor-element-76e2cb2 > .elementor-widget-container{background-color:#FFFFFF;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a, .elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-menu-toggle{color:#FFFFFF;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown{background-color:#133F77;border-style:none;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a:hover,
+					.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a.elementor-item-active,
+					.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a.highlighted,
+					.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-menu-toggle:hover{color:#133F77;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a:hover,
+					.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a.elementor-item-active,
+					.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a.highlighted{background-color:#FFFFFF;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a.elementor-item-active{color:#133F77;background-color:#FFFFFF;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown .elementor-item, .elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown  .elementor-sub-item{font-family:"Aileron", Sans-serif;font-weight:600;}#elementor-popup-modal-15195 .dialog-message{width:640px;height:100vh;align-items:flex-start;}#elementor-popup-modal-15195{justify-content:flex-start;align-items:center;pointer-events:all;background-color:rgba(0,0,0,.8);}#elementor-popup-modal-15195 .dialog-close-button{display:flex;}#elementor-popup-modal-15195 .dialog-widget-content{background-color:#133F77;box-shadow:2px 8px 23px 3px rgba(0,0,0,0.2);}#elementor-popup-modal-15195 .dialog-close-button i{color:#FFFFFF;}#elementor-popup-modal-15195 .dialog-close-button svg{fill:#FFFFFF;}@media(max-width:767px){.elementor-15195 .elementor-element.elementor-element-34b7f7b{--flex-direction:column;--container-widget-width:100%;--container-widget-height:initial;--container-widget-flex-grow:0;--container-widget-align-self:initial;--justify-content:flex-start;--margin-block-start:0px;--margin-block-end:0px;--margin-inline-start:0px;--margin-inline-end:0px;--padding-block-start:3em;--padding-block-end:5em;--padding-inline-start:0em;--padding-inline-end:0em;}.elementor-15195 .elementor-element.elementor-element-c299720{--flex-direction:column;--container-widget-width:100%;--container-widget-height:initial;--container-widget-flex-grow:0;--container-widget-align-self:initial;--gap:0px 0px;--margin-block-start:0px;--margin-block-end:0px;--margin-inline-start:0px;--margin-inline-end:0px;--padding-block-start:1em;--padding-block-end:1em;--padding-inline-start:1em;--padding-inline-end:1em;}.elementor-15195 .elementor-element.elementor-element-76e2cb2{text-align:center;}.elementor-15195 .elementor-element.elementor-element-76e2cb2 img{width:70%;}.elementor-15195 .elementor-element.elementor-element-76e2cb2 > .elementor-widget-container{margin:0px 0px 0px 0px;padding:5px 5px 5px 5px;border-radius:5px 5px 5px 5px;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown .elementor-item, .elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown  .elementor-sub-item{font-size:16px;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown{border-radius:0px 0px 0px 0px;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown li:first-child a{border-top-left-radius:0px;border-top-right-radius:0px;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown li:last-child a{border-bottom-right-radius:0px;border-bottom-left-radius:0px;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--dropdown a{padding-left:20px;padding-right:20px;padding-top:10px;padding-bottom:10px;}.elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu--main > .elementor-nav-menu > li > .elementor-nav-menu--dropdown, .elementor-15195 .elementor-element.elementor-element-db659c4 .elementor-nav-menu__container.elementor-nav-menu--dropdown{margin-top:0px !important;}#elementor-popup-modal-15195 .dialog-message{width:70vw;}#elementor-popup-modal-15195{align-items:flex-start;}#elementor-popup-modal-15195 .dialog-close-button{top:3%;font-size:20px;}body:not(.rtl) #elementor-popup-modal-15195 .dialog-close-button{right:8%;}body.rtl #elementor-popup-modal-15195 .dialog-close-button{left:8%;}}/* Start Custom Fonts CSS */@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 100;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-ultralight-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-ultralight-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 300;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-thin-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-thin-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 500;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-semibold-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-semibold-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: normal;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-regular-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-regular-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 200;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-light-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-light-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 800;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-bold-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-bold-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 900;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-black-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-black-webfont.woff') format('woff');
+}
+/* End Custom Fonts CSS */
