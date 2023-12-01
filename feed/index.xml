@@ -9,8 +9,8 @@
 
 <channel>
 	<title>Turbo Costa</title>
-	<atom:link href="./index.html" rel="self" type="application/rss+xml" />
-	<link>./../index.html</link>
+	<atom:link href="/feed/" rel="self" type="application/rss+xml" />
+	<link>/</link>
 	<description>Repuestos para motores en Colombia</description>
 	<lastBuildDate>Sun, 22 Oct 2023 07:59:03 +0000</lastBuildDate>
 	<language>es</language>
@@ -21,15 +21,15 @@
 	<generator>https://wordpress.org/?v=6.4.1</generator>
 
 <image>
-	<url>./../wp-content/uploads/2020/10/cropped-Enmascarar-grupo-46-32x32.png</url>
+	<url>/wp-content/uploads/2020/10/cropped-Enmascarar-grupo-46-32x32.png</url>
 	<title>Turbo Costa</title>
-	<link>./../index.html</link>
+	<link>/</link>
 	<width>32</width>
 	<height>32</height>
 </image> 
 	<item>
 		<title>Вход в Sol: Как пройти верификацию в Sol?</title>
-		<link>./../%d0%b2%d1%85%d0%be%d0%b4-%d0%b2-sol-%d0%ba%d0%b0%d0%ba-%d0%bf%d1%80%d0%be%d0%b9%d1%82%d0%b8-%d0%b2%d0%b5%d1%80%d0%b8%d1%84%d0%b8%d0%ba%d0%b0%d1%86%d0%b8%d1%8e-%d0%b2-sol/index.html</link>
+		<link>/%d0%b2%d1%85%d0%be%d0%b4-%d0%b2-sol-%d0%ba%d0%b0%d0%ba-%d0%bf%d1%80%d0%be%d0%b9%d1%82%d0%b8-%d0%b2%d0%b5%d1%80%d0%b8%d1%84%d0%b8%d0%ba%d0%b0%d1%86%d0%b8%d1%8e-%d0%b2-sol/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Sun, 22 Oct 2023 07:59:03 +0000</pubDate>
@@ -110,7 +110,7 @@
 			</item>
 		<item>
 		<title>Вход на сайт Sol: Sol Лучшие игровые автоматы</title>
-		<link>./../%d0%b2%d1%85%d0%be%d0%b4-%d0%bd%d0%b0-%d1%81%d0%b0%d0%b9%d1%82-sol-sol-%d0%bb%d1%83%d1%87%d1%88%d0%b8%d0%b5-%d0%b8%d0%b3%d1%80%d0%be%d0%b2%d1%8b%d0%b5-%d0%b0%d0%b2%d1%82%d0%be%d0%bc%d0%b0%d1%82%d1%8b/index.html</link>
+		<link>/%d0%b2%d1%85%d0%be%d0%b4-%d0%bd%d0%b0-%d1%81%d0%b0%d0%b9%d1%82-sol-sol-%d0%bb%d1%83%d1%87%d1%88%d0%b8%d0%b5-%d0%b8%d0%b3%d1%80%d0%be%d0%b2%d1%8b%d0%b5-%d0%b0%d0%b2%d1%82%d0%be%d0%bc%d0%b0%d1%82%d1%8b/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Sun, 22 Oct 2023 07:59:00 +0000</pubDate>
@@ -189,7 +189,7 @@
 			</item>
 		<item>
 		<title>Рабочее зеркало Sol на сегодня: Sol &#8211; Акции и бонусы от казино</title>
-		<link>./../%d1%80%d0%b0%d0%b1%d0%be%d1%87%d0%b5%d0%b5-%d0%b7%d0%b5%d1%80%d0%ba%d0%b0%d0%bb%d0%be-sol-%d0%bd%d0%b0-%d1%81%d0%b5%d0%b3%d0%be%d0%b4%d0%bd%d1%8f-sol-%d0%b0%d0%ba%d1%86%d0%b8%d0%b8-%d0%b8-%d0%b1/index.html</link>
+		<link>/%d1%80%d0%b0%d0%b1%d0%be%d1%87%d0%b5%d0%b5-%d0%b7%d0%b5%d1%80%d0%ba%d0%b0%d0%bb%d0%be-sol-%d0%bd%d0%b0-%d1%81%d0%b5%d0%b3%d0%be%d0%b4%d0%bd%d1%8f-sol-%d0%b0%d0%ba%d1%86%d0%b8%d0%b8-%d0%b8-%d0%b1/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Sun, 22 Oct 2023 07:55:12 +0000</pubDate>
@@ -266,7 +266,7 @@
 			</item>
 		<item>
 		<title>Ответственная игра в Sol Casino: Верификация в казино Sol</title>
-		<link>./../%d0%be%d1%82%d0%b2%d0%b5%d1%82%d1%81%d1%82%d0%b2%d0%b5%d0%bd%d0%bd%d0%b0%d1%8f-%d0%b8%d0%b3%d1%80%d0%b0-%d0%b2-sol-casino-%d0%b2%d0%b5%d1%80%d0%b8%d1%84%d0%b8%d0%ba%d0%b0%d1%86%d0%b8%d1%8f-%d0%b2/index.html</link>
+		<link>/%d0%be%d1%82%d0%b2%d0%b5%d1%82%d1%81%d1%82%d0%b2%d0%b5%d0%bd%d0%bd%d0%b0%d1%8f-%d0%b8%d0%b3%d1%80%d0%b0-%d0%b2-sol-casino-%d0%b2%d0%b5%d1%80%d0%b8%d1%84%d0%b8%d0%ba%d0%b0%d1%86%d0%b8%d1%8f-%d0%b2/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Sun, 22 Oct 2023 07:55:12 +0000</pubDate>
@@ -343,7 +343,7 @@
 			</item>
 		<item>
 		<title>Бонусы в Sol: Как сделать депозит</title>
-		<link>./../%d0%b1%d0%be%d0%bd%d1%83%d1%81%d1%8b-%d0%b2-sol-%d0%ba%d0%b0%d0%ba-%d1%81%d0%b4%d0%b5%d0%bb%d0%b0%d1%82%d1%8c-%d0%b4%d0%b5%d0%bf%d0%be%d0%b7%d0%b8%d1%82/index.html</link>
+		<link>/%d0%b1%d0%be%d0%bd%d1%83%d1%81%d1%8b-%d0%b2-sol-%d0%ba%d0%b0%d0%ba-%d1%81%d0%b4%d0%b5%d0%bb%d0%b0%d1%82%d1%8c-%d0%b4%d0%b5%d0%bf%d0%be%d0%b7%d0%b8%d1%82/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Sun, 22 Oct 2023 07:55:12 +0000</pubDate>
@@ -422,7 +422,7 @@
 			</item>
 		<item>
 		<title>Официальное зеркало SolCasino: Лицензионное казино Sol</title>
-		<link>./../%d0%be%d1%84%d0%b8%d1%86%d0%b8%d0%b0%d0%bb%d1%8c%d0%bd%d0%be%d0%b5-%d0%b7%d0%b5%d1%80%d0%ba%d0%b0%d0%bb%d0%be-solcasino-%d0%bb%d0%b8%d1%86%d0%b5%d0%bd%d0%b7%d0%b8%d0%be%d0%bd%d0%bd%d0%be%d0%b5-%d0%ba/index.html</link>
+		<link>/%d0%be%d1%84%d0%b8%d1%86%d0%b8%d0%b0%d0%bb%d1%8c%d0%bd%d0%be%d0%b5-%d0%b7%d0%b5%d1%80%d0%ba%d0%b0%d0%bb%d0%be-solcasino-%d0%bb%d0%b8%d1%86%d0%b5%d0%bd%d0%b7%d0%b8%d0%be%d0%bd%d0%bd%d0%be%d0%b5-%d0%ba/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Sun, 22 Oct 2023 07:55:06 +0000</pubDate>
@@ -495,7 +495,7 @@
 			</item>
 		<item>
 		<title>Лучшие игровые автоматы онлайн: Бонусная программа Sol</title>
-		<link>./../%d0%bb%d1%83%d1%87%d1%88%d0%b8%d0%b5-%d0%b8%d0%b3%d1%80%d0%be%d0%b2%d1%8b%d0%b5-%d0%b0%d0%b2%d1%82%d0%be%d0%bc%d0%b0%d1%82%d1%8b-%d0%be%d0%bd%d0%bb%d0%b0%d0%b9%d0%bd-%d0%b1%d0%be%d0%bd%d1%83%d1%81/index.html</link>
+		<link>/%d0%bb%d1%83%d1%87%d1%88%d0%b8%d0%b5-%d0%b8%d0%b3%d1%80%d0%be%d0%b2%d1%8b%d0%b5-%d0%b0%d0%b2%d1%82%d0%be%d0%bc%d0%b0%d1%82%d1%8b-%d0%be%d0%bd%d0%bb%d0%b0%d0%b9%d0%bd-%d0%b1%d0%be%d0%bd%d1%83%d1%81/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Sun, 22 Oct 2023 07:55:06 +0000</pubDate>
@@ -573,7 +573,7 @@
 			</item>
 		<item>
 		<title>Официальное зеркало Sol казино: Пополнение игрового баланса в Sol</title>
-		<link>./../%d0%be%d1%84%d0%b8%d1%86%d0%b8%d0%b0%d0%bb%d1%8c%d0%bd%d0%be%d0%b5-%d0%b7%d0%b5%d1%80%d0%ba%d0%b0%d0%bb%d0%be-sol-%d0%ba%d0%b0%d0%b7%d0%b8%d0%bd%d0%be-%d0%bf%d0%be%d0%bf%d0%be%d0%bb%d0%bd%d0%b5%d0%bd/index.html</link>
+		<link>/%d0%be%d1%84%d0%b8%d1%86%d0%b8%d0%b0%d0%bb%d1%8c%d0%bd%d0%be%d0%b5-%d0%b7%d0%b5%d1%80%d0%ba%d0%b0%d0%bb%d0%be-sol-%d0%ba%d0%b0%d0%b7%d0%b8%d0%bd%d0%be-%d0%bf%d0%be%d0%bf%d0%be%d0%bb%d0%bd%d0%b5%d0%bd/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Sun, 22 Oct 2023 07:55:06 +0000</pubDate>
@@ -656,7 +656,7 @@
 			</item>
 		<item>
 		<title>Краткая информация о Lev: Кешбэк, фриспины и промокоды Lev казино</title>
-		<link>./../%d0%ba%d1%80%d0%b0%d1%82%d0%ba%d0%b0%d1%8f-%d0%b8%d0%bd%d1%84%d0%be%d1%80%d0%bc%d0%b0%d1%86%d0%b8%d1%8f-%d0%be-lev-%d0%ba%d0%b5%d1%88%d0%b1%d1%8d%d0%ba-%d1%84%d1%80%d0%b8%d1%81%d0%bf%d0%b8%d0%bd/index.html</link>
+		<link>/%d0%ba%d1%80%d0%b0%d1%82%d0%ba%d0%b0%d1%8f-%d0%b8%d0%bd%d1%84%d0%be%d1%80%d0%bc%d0%b0%d1%86%d0%b8%d1%8f-%d0%be-lev-%d0%ba%d0%b5%d1%88%d0%b1%d1%8d%d0%ba-%d1%84%d1%80%d0%b8%d1%81%d0%bf%d0%b8%d0%bd/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Thu, 19 Oct 2023 18:14:51 +0000</pubDate>
@@ -737,7 +737,7 @@
 			</item>
 		<item>
 		<title>Слоты в Rox: Как зарегистрироваться</title>
-		<link>./../%d1%81%d0%bb%d0%be%d1%82%d1%8b-%d0%b2-rox-%d0%ba%d0%b0%d0%ba-%d0%b7%d0%b0%d1%80%d0%b5%d0%b3%d0%b8%d1%81%d1%82%d1%80%d0%b8%d1%80%d0%be%d0%b2%d0%b0%d1%82%d1%8c%d1%81%d1%8f/index.html</link>
+		<link>/%d1%81%d0%bb%d0%be%d1%82%d1%8b-%d0%b2-rox-%d0%ba%d0%b0%d0%ba-%d0%b7%d0%b0%d1%80%d0%b5%d0%b3%d0%b8%d1%81%d1%82%d1%80%d0%b8%d1%80%d0%be%d0%b2%d0%b0%d1%82%d1%8c%d1%81%d1%8f/</link>
 		
 		<dc:creator><![CDATA[]]></dc:creator>
 		<pubDate>Thu, 19 Oct 2023 18:05:46 +0000</pubDate>

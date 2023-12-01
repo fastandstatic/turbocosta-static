@@ -9,8 +9,8 @@
 
 <channel>
 	<title>Tienda &#8211; Turbo Costa</title>
-	<atom:link href="./index.html" rel="self" type="application/rss+xml" />
-	<link>./../../index.html</link>
+	<atom:link href="/shop/feed/" rel="self" type="application/rss+xml" />
+	<link>/</link>
 	<description>Repuestos para motores en Colombia</description>
 	<lastBuildDate>Wed, 06 Sep 2023 20:36:40 +0000</lastBuildDate>
 	<language>es</language>
@@ -21,15 +21,15 @@
 	<generator>https://wordpress.org/?v=6.4.1</generator>
 
 <image>
-	<url>./../../wp-content/uploads/2020/10/cropped-Enmascarar-grupo-46-32x32.png</url>
+	<url>/wp-content/uploads/2020/10/cropped-Enmascarar-grupo-46-32x32.png</url>
 	<title>Tienda &#8211; Turbo Costa</title>
-	<link>./../../index.html</link>
+	<link>/</link>
 	<width>32</width>
 	<height>32</height>
 </image> 
 	<item>
 		<title>Turbo Bobcat 570</title>
-		<link>./../turbo-bobcat-570/index.html</link>
+		<link>/shop/turbo-bobcat-570/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:21 +0000</pubDate>
@@ -43,7 +43,7 @@
 			</item>
 		<item>
 		<title>Turbo Kia Sportage</title>
-		<link>./../turbo-kia-sportage/index.html</link>
+		<link>/shop/turbo-kia-sportage/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:21 +0000</pubDate>
@@ -69,7 +69,7 @@ Kia Sportage]]></content:encoded>
 			</item>
 		<item>
 		<title>Turbo 3126</title>
-		<link>./../turbo-3126/index.html</link>
+		<link>/shop/turbo-3126/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:21 +0000</pubDate>
@@ -83,7 +83,7 @@ Kia Sportage]]></content:encoded>
 			</item>
 		<item>
 		<title>Turbo GT2556S Perkings</title>
-		<link>./../turbo-gt2556s-perkings/index.html</link>
+		<link>/shop/turbo-gt2556s-perkings/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:20 +0000</pubDate>
@@ -97,7 +97,7 @@ Kia Sportage]]></content:encoded>
 			</item>
 		<item>
 		<title>Turbo Citroen Jumper 2.2 Variable</title>
-		<link>./../turbo-citroen-jumper-2-2-variable/index.html</link>
+		<link>/shop/turbo-citroen-jumper-2-2-variable/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:20 +0000</pubDate>
@@ -111,7 +111,7 @@ Kia Sportage]]></content:encoded>
 			</item>
 		<item>
 		<title>Turbo Citroen Jumper 2.2L Normal</title>
-		<link>./../turbo-citroen-jumper-2-2l-normal/index.html</link>
+		<link>/shop/turbo-citroen-jumper-2-2l-normal/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:20 +0000</pubDate>
@@ -125,7 +125,7 @@ Kia Sportage]]></content:encoded>
 			</item>
 		<item>
 		<title>Turbo Kia Sorrento 2.2L</title>
-		<link>./../turbo-kia-sorrento-2-2l/index.html</link>
+		<link>/shop/turbo-kia-sorrento-2-2l/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:20 +0000</pubDate>
@@ -139,7 +139,7 @@ Kia Sportage]]></content:encoded>
 			</item>
 		<item>
 		<title>Turbo Kia Sorrento 2.5L</title>
-		<link>./../turbo-kia-sorrento-2-5l/index.html</link>
+		<link>/shop/turbo-kia-sorrento-2-5l/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:20 +0000</pubDate>
@@ -153,7 +153,7 @@ Kia Sportage]]></content:encoded>
 			</item>
 		<item>
 		<title>Turbo Nissan Navara 2.5L</title>
-		<link>./../turbo-nissan-navara-2-5l/index.html</link>
+		<link>/shop/turbo-nissan-navara-2-5l/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:20 +0000</pubDate>
@@ -167,7 +167,7 @@ Kia Sportage]]></content:encoded>
 			</item>
 		<item>
 		<title>Turbo Cummins ISX</title>
-		<link>./../turbo-cummins-isx/index.html</link>
+		<link>/shop/turbo-cummins-isx/</link>
 		
 		<dc:creator><![CDATA[eme]]></dc:creator>
 		<pubDate>Fri, 03 Feb 2023 21:05:05 +0000</pubDate>
