@@ -78,6 +78,8 @@ if (!String.prototype.trim) {
     if (options.debug) {
         console.log('PYS:', options);
     }
+    var firstVisit = false;
+
 
     var dummyPinterest = function () {
 
@@ -85,7 +87,9 @@ if (!String.prototype.trim) {
          * Public API
          */
         return {
-
+            tag: function() {
+                return "pinterest";
+            },
             isEnabled: function () {},
 
             disable: function () {},
@@ -96,17 +100,19 @@ if (!String.prototype.trim) {
                 return false;
             },
 
-            onAdSenseEvent: function () {},
+            onAdSenseEvent: function (event) {},
 
             onClickEvent: function (params) {},
 
             onWatchVideo: function (params) {},
 
-            onCommentEvent: function () {},
+            onCommentEvent: function (event) {},
 
             onFormEvent: function (params) {},
 
             onDownloadEvent: function (params) {},
+
+
 
             onWooAddToCartOnButtonEvent: function (product_id) {},
 
@@ -116,11 +122,16 @@ if (!String.prototype.trim) {
 
             onWooAffiliateEvent: function (product_id) {},
 
-            onWooPayPalEvent: function () {},
+            onWooPayPalEvent: function (event) {},
 
             onEddAddToCartOnButtonEvent: function (download_id, price_index, qty) {},
 
-            onEddRemoveFromCartEvent: function (item) {}
+            onEddRemoveFromCartEvent: function (item) {},
+
+            onPageScroll: function (event) {},
+            onTime: function (event) {
+
+            },
 
         }
 
@@ -132,7 +143,9 @@ if (!String.prototype.trim) {
          * Public API
          */
         return {
-
+            tag: function() {
+                return "bing";
+            },
             isEnabled: function () {},
 
             disable: function () {},
@@ -143,17 +156,18 @@ if (!String.prototype.trim) {
                 return false;
             },
 
-            onAdSenseEvent: function () {},
+            onAdSenseEvent: function (event) {},
 
             onClickEvent: function (params) {},
 
             onWatchVideo: function (params) {},
 
-            onCommentEvent: function () {},
+            onCommentEvent: function (event) {},
 
             onFormEvent: function (params) {},
 
             onDownloadEvent: function (params) {},
+
 
             onWooAddToCartOnButtonEvent: function (product_id) {},
 
@@ -163,17 +177,21 @@ if (!String.prototype.trim) {
 
             onWooAffiliateEvent: function (product_id) {},
 
-            onWooPayPalEvent: function () {},
+            onWooPayPalEvent: function (event) {},
 
             onEddAddToCartOnButtonEvent: function (download_id, price_index, qty) {},
 
-            onEddRemoveFromCartEvent: function (item) {}
+            onEddRemoveFromCartEvent: function (item) {},
+            onPageScroll: function (event) {},
+            onTime: function (event) {
 
+            },
         }
 
     }();
 
     var Utils = function (options) {
+
 
         var Pinterest = dummyPinterest;
 
@@ -181,9 +199,21 @@ if (!String.prototype.trim) {
 
         var gtag_loaded = false;
 
+        let isNewSession = checkSession();
+
+        if(isNewSession){
+            let duration = options.last_visit_duration * 60000
+            var now = new Date();
+            now.setTime(now.getTime() + duration);
+            Cookies.set('pys_session_limit', true,{ expires: now })
+            Cookies.set('pys_start_session', true)
+        }
         function loadPixels() {
 
             if (!options.gdpr.all_disabled_by_api) {
+                if (!options.gdpr.tiktok_disabled_by_api) {
+                    TikTok.loadPixel();
+                }
 
                 if (!options.gdpr.facebook_disabled_by_api) {
                     Facebook.loadPixel();
@@ -206,6 +236,16 @@ if (!String.prototype.trim) {
                 }
 
             }
+            if (options.gdpr.consent_magic_integration_enabled && typeof CS_Data !== "undefined") {
+                if (typeof CS_Data.cs_google_analytics_consent_mode !== "undefined" && CS_Data.cs_google_analytics_consent_mode == 1) {
+                    Analytics.loadPixel();
+                }
+
+                if (typeof CS_Data.cs_google_ads_consent_mode !== "undefined" && CS_Data.cs_google_ads_consent_mode == 1 ) {
+                    GAds.loadPixel();
+                }
+            }
+
 
         }
 
@@ -250,6 +290,18 @@ if (!String.prototype.trim) {
         function tagIsYouTubeVideo(tag) {
             var src = tag.src || '';
             return src.indexOf('youtube.com/embed/') > -1 || src.indexOf('youtube.com/v/') > -1;
+        }
+
+        function tagIsYouTubeAsyncVideo(tag) {
+            if(tag.src && tag.src.indexOf("data:image") !== -1) return false; // video is loaded
+            var keys = Object.keys(tag.dataset);
+            for(var i = 0;i<keys.length;i++) {
+                if(keys[i].toLowerCase().indexOf("src") > -1) {
+                    var src = tag.dataset[keys[i]];
+                    return src.indexOf('youtube.com/embed/') > -1 || src.indexOf('youtube.com/v/') > -1;
+                }
+            }
+            return false; //not find src
         }
 
         // Turn embed objects into iframe objects and ensure they have the right parameters
@@ -317,6 +369,18 @@ if (!String.prototype.trim) {
 
             }
 
+        }
+
+        function addDynYouTubeVideos(el) {
+            // We only bind to iFrames with a YouTube URL with the enablejsapi=1 and
+            // origin=<<hostname>> parameters
+            if (el.tagName === 'IFRAME'
+                && tagIsYouTubeVideo(el)
+                && isJSApiAttrEnabled(el.src)
+                && isOriginAttrEnabled(el.src))
+            {
+                addYouTubeEvents(el);
+            }
         }
 
         // Event handler for events emitted from the YouTube API
@@ -392,14 +456,47 @@ if (!String.prototype.trim) {
                         video_type: 'youtube',
                         video_id: videoId,
                         video_title: data.title,
-                        event_trigger: key
                     };
 
-                    Facebook.onWatchVideo(params);
-                    Analytics.onWatchVideo(params);
-                    GAds.onWatchVideo(params);
-                    Pinterest.onWatchVideo(params);
-                    Bing.onWatchVideo(params);
+                    // Auto
+                    if(options.automatic.enable_video
+                        && options.automatic.enable_youtube
+                        && options.dynamicEvents.hasOwnProperty("automatic_event_video")
+                    ) {
+                        var pixels = Object.keys(options.dynamicEvents.automatic_event_video);
+
+                        for (var i = 0; i < pixels.length; i++) {
+                            var event = Utils.clone(options.dynamicEvents.automatic_event_video[pixels[i]]);
+                            event.params["progress"] = key
+                            Utils.copyProperties(params, event.params)
+                            if ( pixels[i] === 'tiktok' ) {
+                                var time_trigger = event.automatic_event_video_trigger;
+                                if ( currentTime >= marks[time_trigger] && event.fired !== true ) {
+                                    getPixelBySlag(pixels[i]).onWatchVideo(event);
+
+                                    //tiktok watch video fire once
+                                    options.dynamicEvents.automatic_event_video[pixels[i]].fired = true;
+                                }
+                            } else {
+                                Utils.copyProperties(Utils.getRequestParams(), event.params);
+                                getPixelBySlag(pixels[i]).onWatchVideo(event);
+                            }
+                        }
+                    }
+
+                    if(key == "play") {
+
+                        $.each(options.triggerEventTypes, function (triggerType, events) {
+                            $.each(events, function (eventId, triggers) {
+                                switch (triggerType) {
+                                    case 'video_play':
+                                        Utils.fireTriggerEvent(eventId);
+                                        break;
+                                }
+
+                            });
+                        });
+                    }
 
                 }
 
@@ -411,6 +508,62 @@ if (!String.prototype.trim) {
         function tagIsVimeoVideo(tag) {
             var src = tag.src || '';
             return src.indexOf('player.vimeo.com/video/') > -1;
+        }
+
+        function tagIsAsincVimeoVideo(tag) {
+            if(tag.src) return false; // video is loaded
+            var keys = Object.keys(tag.dataset);
+            for(var i = 0;i<keys.length;i++) {
+                if(keys[i].toLowerCase().indexOf("src") > -1) {
+                    var src = tag.dataset[keys[i]];
+                    return src.indexOf('player.vimeo.com/video/') > -1;
+                }
+            }
+            return false; //not find src
+        }
+
+        function attachVimeoPlayerToTag(tag) {
+            var player = new Vimeo.Player(tag);
+
+            player.getDuration().then(function (pl,seconds) {
+                pl.pysMarks = getVideoCompletionMarks(seconds);
+            }.bind(null,player));
+
+            player.getVideoTitle().then(function (pl,title) {
+                pl.pysVideoTitle = title;
+            }.bind(null,player));
+
+            player.getVideoId().then(function (pl,id) {
+                pl.pysVideoId = id;
+            }.bind(null,player));
+
+            player.pysCompletedMarks = {};
+
+            player.on('play', function () {
+
+                if (this.pysTimer) {
+                    return;
+                }
+
+                clearInterval(this.pysTimer);
+
+                var player = this;
+
+                this.pysTimer = setInterval(function () {
+                    checkVimeoCompletion(player);
+                }, 1000);
+
+            });
+
+            player.on('pause', function () {
+                clearInterval(this.pysTimer);
+                this.pysTimer = false;
+            });
+
+            player.on('ended', function () {
+                clearInterval(this.pysTimer);
+                this.pysTimer = false;
+            });
         }
 
         // Trigger event if Vimeo video mark was reached
@@ -432,15 +585,47 @@ if (!String.prototype.trim) {
                             video_type: 'vimeo',
                             video_id: player.pysVideoId,
                             video_title: player.pysVideoTitle,
-                            event_trigger: key
                         };
 
-                        Facebook.onWatchVideo(params);
-                        Analytics.onWatchVideo(params);
-                        GAds.onWatchVideo(params);
-                        Pinterest.onWatchVideo(params);
-                        Bing.onWatchVideo(params);
+                        // Auto
+                        if(options.automatic.enable_video
+                            && options.automatic.enable_vimeo
+                            && options.dynamicEvents.hasOwnProperty("automatic_event_video")
+                        ) {
+                            var pixels = Object.keys(options.dynamicEvents.automatic_event_video);
 
+                            for (var i = 0; i < pixels.length; i++) {
+                                var event = Utils.clone(options.dynamicEvents.automatic_event_video[pixels[i]]);
+                                event.params["progress"] = key
+                                Utils.copyProperties(params, event.params);
+
+                                if ( pixels[i] === 'tiktok' ) {
+                                    var time_trigger = event.automatic_event_video_trigger;
+                                    if ( seconds >= player.pysMarks[time_trigger] && event.fired !== true ) {
+                                        getPixelBySlag(pixels[i]).onWatchVideo(event);
+
+                                        //tiktok watch video fire once
+                                        options.dynamicEvents.automatic_event_video[pixels[i]].fired = true;
+                                    }
+                                } else {
+                                    Utils.copyProperties(Utils.getRequestParams(), event.params);
+                                    getPixelBySlag(pixels[i]).onWatchVideo(event);
+                                }
+                            }
+                        }
+
+                        if(key == "play") {
+                            $.each(options.triggerEventTypes, function (triggerType, events) {
+                                $.each(events, function (eventId, triggers) {
+                                    switch (triggerType) {
+                                        case 'video_play':
+                                            Utils.fireTriggerEvent(eventId);
+                                            break;
+                                    }
+
+                                });
+                            });
+                        }
                     }
 
                 }
@@ -453,41 +638,53 @@ if (!String.prototype.trim) {
          * COOKIES UTILS
          */
 
-        var utmTerms = ['utm_source', 'utm_media', 'utm_campaign', 'utm_term', 'utm_content'];
-
+        var utmTerms = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content' ,'utm_term'];
+        var utmId = ['fbadid', 'gadid', 'padid', 'bingid'];
         var requestParams = [];
 
-        function validateEmail(email) {
-            var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-            return re.test(email);
+
+        function getDomain(url) {
+
+            url = url.replace(/(https?:\/\/)?(www.)?/i, '');
+
+            if (url.indexOf('/') !== -1) {
+                return url.split('/')[0];
+            }
+
+            return url;
+        }
+
+        function checkSession() {
+
+            if( Cookies.get('pys_start_session') === undefined ||
+                Cookies.get('pys_session_limit') === undefined) {
+                firstVisit = true;
+                return true
+            }
+            return false
+
         }
 
         function getTrafficSource() {
 
             try {
 
-                var referrer = document.referrer.toString(),
+                let referrer = document.referrer.toString(),
                     source;
 
-                var direct = referrer.length === 0;
-                var internal = direct ? false : referrer.indexOf(options.siteUrl) === 0;
-                var external = !direct && !internal;
-                var cookie = typeof Cookies.get('pysTrafficSource') === 'undefined' ? false : Cookies.get('pysTrafficSource');
+                let direct = referrer.length === 0;
+                let internal = direct ? false : referrer.indexOf(options.siteUrl) === 0;
+                let external = !direct && !internal;
 
                 if (external === false) {
-                    source = cookie ? cookie : 'direct';
+                    source = 'direct';
                 } else {
-                    source = cookie && cookie === referrer ? cookie : referrer;
+                    source = referrer;
                 }
 
                 if (source !== 'direct') {
-
-                    var url = document.createElement('a');
-                    url.href = source;
-
                     // leave only domain (Issue #70)
-                    return url.hostname;
-
+                    return getDomain(source);
                 } else {
                     return source;
                 }
@@ -532,30 +729,63 @@ if (!String.prototype.trim) {
 
         }
 
+        function getLandingPageValue() {
+            let name = "pys_landing_page"
+            if(options.visit_data_model === "last_visit") {
+                name = "last_pys_landing_page"
+            }
+            if(Cookies.get(name) === 'undefined') {
+                return "";
+            } else {
+                return Cookies.get(name);
+            }
+        }
+        function getTrafficSourceValue() {
+            let name = "pysTrafficSource"
+            if(options.visit_data_model === "last_visit") {
+                name = "last_pysTrafficSource"
+            }
+            if(Cookies.get(name) === 'undefined') {
+                return "";
+            } else {
+                return Cookies.get(name);
+            }
+        }
+
+        function getUTMId(useLast = false) {
+            try {
+                let cookiePrefix = 'pys_'
+                let terms = [];
+                if (useLast) {
+                    cookiePrefix = 'last_pys_'
+                }
+                $.each(utmId, function (index, name) {
+                    if (Cookies.get(cookiePrefix + name)) {
+                        terms[name] = Cookies.get(cookiePrefix + name)
+                    }
+                });
+                return terms;
+            } catch (e) {
+                console.error(e);
+                return [];
+            }
+        }
         /**
          * Return UTM terms from request query variables or from cookies.
          */
-        function getUTMs() {
+        function getUTMs(useLast = false) {
 
             try {
-
-                var terms = [];
-                var queryVars = getQueryVars();
-
+                let cookiePrefix = 'pys_'
+                if(useLast) {
+                    cookiePrefix = 'last_pys_'
+                }
+                let terms = [];
                 $.each(utmTerms, function (index, name) {
-
-                    var value;
-
-                    if (Cookies.get('pys_' + name)) {
-                        value = Cookies.get('pys_' + name);
-                        // do not allow email in request params (Issue #70)
-                        terms[name] = filterEmails(value);
-                    } else if (queryVars.hasOwnProperty(name)) {
-                        value = queryVars[name];
-                        // do not allow email in request params (Issue #70)
-                        terms[name] = filterEmails(value);
+                    if (Cookies.get(cookiePrefix + name)) {
+                        let value = Cookies.get(cookiePrefix + name);
+                        terms[name] = filterEmails(value); // do not allow email in request params (Issue #70)
                     }
-
                 });
 
                 return terms;
@@ -567,14 +797,97 @@ if (!String.prototype.trim) {
 
         }
 
+        function getDateTime() {
+            var dateTime = new Array();
+            var date = new Date(),
+                days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                ],
+                hours = ['00-01', '01-02', '02-03', '03-04', '04-05', '05-06', '06-07', '07-08',
+                    '08-09', '09-10', '10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17',
+                    '17-18', '18-19', '19-20', '20-21', '21-22', '22-23', '23-24'
+                ];
+            dateTime.push(hours[date.getHours()]);
+            dateTime.push(days[date.getDay()]);
+            dateTime.push(months[date.getMonth()]);
+            return dateTime;
+        }
+
         function filterEmails(value) {
-            return validateEmail(value) ? undefined : value;
+            return Utils.validateEmail(value) ? undefined : value;
         }
 
         /**
          * PUBLIC API
          */
         return {
+
+            PRODUCT_SIMPLE : 0,
+            PRODUCT_VARIABLE : 1,
+            PRODUCT_BUNDLE : 2,
+            PRODUCT_GROUPED : 3,
+            utmTerms : utmTerms,
+            utmId : utmId,
+            isNewSession: checkSession(),
+            hideMatchingPixel: function(pixelValue, slug) {
+                if(!firstVisit) return false;
+                if(Cookies.get('hide_tag_'+pixelValue))
+                {
+                    return true;
+                }
+                var hide = false;
+                const url_parts = window.location.href;
+                const url_params = new URLSearchParams(window.location.search);
+                const matchingPixels = [];
+                $.each(getPixelBySlag(slug).getHidePixel(), function (index, hide_info) {
+
+                    if (hide_info.pixel === pixelValue) {
+                        for (const item of hide_info.hide_tag_contain) {
+                            if (item) {
+                                let hideTagTimeInHours = hide_info.hide_tag_time;
+                                let hideTagTimeInMilliseconds = hideTagTimeInHours * 60 * 60 * 1000;
+                                let currentTimeInMilliseconds = new Date().getTime();
+                                let expiresTimeInMilliseconds = currentTimeInMilliseconds + hideTagTimeInMilliseconds;
+                                const itemValue = item.split('=');
+                                const key = itemValue[0];
+                                const value = itemValue[1];
+
+                                if (value !== undefined) {
+                                    if (url_params.get(key) === value) {
+                                        Cookies.set('hide_tag_'+pixelValue, true, { expires: new Date(expiresTimeInMilliseconds) });
+                                        hide = true;
+                                        break;
+                                    }
+                                } else if (url_params.get(key) !== null) {
+                                    Cookies.set('hide_tag_'+pixelValue, true, { expires: new Date(expiresTimeInMilliseconds) });
+                                    hide = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+                return hide;
+            },
+            validateEmail: function (email) {
+                var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                return re.test(email);
+            },
+             fireEventForAllPixel:function(functionName,events){
+                if (events.hasOwnProperty(Facebook.tag()))
+                    Facebook[functionName](events[Facebook.tag()]);
+                if (events.hasOwnProperty(Analytics.tag()))
+                    Analytics[functionName](events[Analytics.tag()]);
+                if (events.hasOwnProperty(GAds.tag()))
+                    GAds[functionName](events[GAds.tag()]);
+                if (events.hasOwnProperty(Pinterest.tag()))
+                    Pinterest[functionName](events[Pinterest.tag()]);
+                if (events.hasOwnProperty(Bing.tag()))
+                    Bing[functionName](events[Bing.tag()]);
+                 if (events.hasOwnProperty(TikTok.tag()))
+                     TikTok[functionName](events[TikTok.tag()]);
+            },
 
             getQueryValue:function (name){
                 return getQueryVars()[name];
@@ -597,9 +910,54 @@ if (!String.prototype.trim) {
             // Clone all object members to another and return it
             copyProperties: function (from, to) {
                 for (var key in from) {
+                    if("function" == typeof from[key]) {
+                        continue;
+                    }
                     to[key] = from[key];
                 }
                 return to;
+            },
+
+            clone: function(obj) {
+                var copy;
+
+                // Handle the 3 simple types, and null or undefined
+                if (null == obj || "object" != typeof obj) return obj;
+
+                // Handle Date
+                if (obj instanceof Date) {
+                    copy = new Date();
+                    copy.setTime(obj.getTime());
+                    return copy;
+                }
+
+                // Handle Array
+                if (obj instanceof Array) {
+                    copy = [];
+                    for (var i = 0, len = obj.length; i < len; i++) {
+                        if("function" == typeof obj[i]) {
+                            continue;
+                        }
+                        copy[i] = Utils.clone(obj[i]);
+                    }
+                    return copy;
+                }
+
+                // Handle Object
+                if (obj instanceof Object) {
+                    copy = {};
+                    for (var attr in obj) {
+                        if (obj.hasOwnProperty(attr)) {
+                            if("function" == typeof obj[attr]) {
+                                continue;
+                            }
+                            copy[attr] = Utils.clone(obj[attr]);
+                        }
+                    }
+                    return copy;
+                }
+
+                return obj;
             },
 
             // Returns array of elements with given tag name
@@ -630,23 +988,45 @@ if (!String.prototype.trim) {
 
                     // turn videos into trackable videos with events
                     for (var i = 0; i < potentialVideos.length; i++) {
-                        if (tagIsYouTubeVideo(potentialVideos[i])) {
-                            var iframe = normalizeYouTubeIframe(potentialVideos[i]);
+                        var video = potentialVideos[i];
+                        if (tagIsYouTubeVideo(video)) {
+                            var iframe = normalizeYouTubeIframe(video);
                             addYouTubeEvents(iframe);
+                        } else {
+                            if(tagIsYouTubeAsyncVideo(video)) {
+                                video.addEventListener("load", function(evt) {
+                                    var iframe = normalizeYouTubeIframe(evt.currentTarget);
+                                    addYouTubeEvents(iframe);
+                                });
+                            }
                         }
                     }
 
-                    // bind to dynamically added videos
-                    $(document).on("load",function () {
-                        var el = evt.target || evt.srcElement;
-                        var isYT = checkIfYouTubeVideo(el);
 
-                        // We only bind to iFrames with a YouTube URL with the enablejsapi=1 and
-                        // origin=<<hostname>> parameters
-                        if (el.tagName === 'IFRAME' && isYT && isJSApiAttrEnabled(el.src) && isOriginAttrEnabled(el.src)) {
-                            addYouTubeEvents(el);
+
+                    var targets = document.querySelectorAll('.elementor-widget-video .elementor-wrapper');
+
+                    const config = {
+                        attributes: false,
+                        childList: true,
+                        subtree: true
+                    };
+
+                    const callback = function(mutationsList, observer) {
+                        for (let mutation of mutationsList) {
+                            if (mutation.type === 'childList') {
+                                for(var m = 0;m<mutation.addedNodes.length;m++) {
+                                    addDynYouTubeVideos(mutation.addedNodes[m]);
+                                }
+                            }
                         }
-                    });
+                    };
+                    // observe elementator widget-video and add event when it add iframe
+                    for(var i=0;i<targets.length;i++) {
+                        const observer = new MutationObserver(callback);
+                        observer.observe(targets[i], config);//maybe remove before add
+                    }
+
 
                 };
 
@@ -659,58 +1039,22 @@ if (!String.prototype.trim) {
              */
             initVimeoAPI: function () {
 
+
                 $(document).ready(function () {
 
                     var potentialVideos = Utils.getTagsAsArray('iframe').concat(Utils.getTagsAsArray('embed'));
 
                     for (var i = 0; i < potentialVideos.length; i++) {
-
-                        if (!tagIsVimeoVideo(potentialVideos[i])) {
-                            continue;
-                        }
-
-                        var player = new Vimeo.Player(potentialVideos[i]);
-
-                        player.getDuration().then(function (pl,seconds) {
-                            pl.pysMarks = getVideoCompletionMarks(seconds);
-                        }.bind(null,player));
-
-                        player.getVideoTitle().then(function (pl,title) {
-                            pl.pysVideoTitle = title;
-                        }.bind(null,player));
-
-                        player.getVideoId().then(function (pl,id) {
-                            pl.pysVideoId = id;
-                        }.bind(null,player));
-
-                        player.pysCompletedMarks = {};
-
-                        player.on('play', function () {
-
-                            if (this.pysTimer) {
-                                return;
+                        var tag = potentialVideos[i];
+                        if (tagIsVimeoVideo(tag)) {
+                            attachVimeoPlayerToTag(tag);
+                        } else {
+                            if (tagIsAsincVimeoVideo(tag)) {
+                                tag.addEventListener("load", function(evt) {
+                                    attachVimeoPlayerToTag(evt.currentTarget);
+                                });
                             }
-
-                            clearInterval(this.pysTimer);
-
-                            var player = this;
-
-                            this.pysTimer = setInterval(function () {
-                                checkVimeoCompletion(player);
-                            }, 1000);
-
-                        });
-
-                        player.on('pause', function () {
-                            clearInterval(this.pysTimer);
-                            this.pysTimer = false;
-                        });
-
-                        player.on('ended', function () {
-                            clearInterval(this.pysTimer);
-                            this.pysTimer = false;
-                        });
-
+                        }
                     }
 
                 });
@@ -719,44 +1063,192 @@ if (!String.prototype.trim) {
 
             manageCookies: function () {
 
+                if (options.gdpr.ajax_enabled && !options.gdpr.consent_magic_integration_enabled) {
+
+                    // retrieves actual PYS GDPR filters values which allow to avoid cache issues
+                    $.get({
+                        url: options.ajaxUrl,
+                        dataType: 'json',
+                        data: {
+                            action: 'pys_get_gdpr_filters_values'
+                        },
+                        success: function (res) {
+
+                            if (res.success) {
+
+                                options.gdpr.all_disabled_by_api = res.data.all_disabled_by_api;
+                                options.gdpr.facebook_disabled_by_api = res.data.facebook_disabled_by_api;
+                                options.gdpr.tiktok_disabled_by_api = res.data.tiktok_disabled_by_api;
+                                options.gdpr.analytics_disabled_by_api = res.data.analytics_disabled_by_api;
+                                options.gdpr.google_ads_disabled_by_api = res.data.google_ads_disabled_by_api;
+                                options.gdpr.pinterest_disabled_by_api = res.data.pinterest_disabled_by_api;
+                                options.gdpr.bing_disabled_by_api = res.data.bing_disabled_by_api;
+
+                                options.cookie.externalID_disabled_by_api = res.data.externalID_disabled_by_api;
+                                options.cookie.disabled_all_cookie = res.data.disabled_all_cookie;
+                                options.cookie.disabled_advanced_form_data_cookie = res.data.disabled_advanced_form_data_cookie;
+                                options.cookie.disabled_landing_page_cookie = res.data.disabled_landing_page_cookie;
+                                options.cookie.disabled_first_visit_cookie = res.data.disabled_first_visit_cookie;
+                                options.cookie.disabled_trafficsource_cookie = res.data.disabled_trafficsource_cookie;
+                                options.cookie.disabled_utmTerms_cookie = res.data.disabled_utmTerms_cookie;
+                                options.cookie.disabled_utmId_cookie = res.data.disabled_utmId_cookie;
+
+                            }
+                        }
+                    });
+                }
+                let expires = parseInt(options.cookie_duration); //  days
+                let queryVars = getQueryVars();
+                let landing = window.location.href.split('?')[0];
                 try {
+                    // save data for first visit
+                    if(Cookies.get('pys_first_visit') === undefined && (!options.cookie.disabled_all_cookie)) {
 
-                    var expires = 0.5; // half day
-                    var source = getTrafficSource();
-
-                    // manage traffic source cookie
-                    if (source !== 'direct') {
-                        Cookies.set('pysTrafficSource', source, { expires: expires });
-                    } else {
-                        Cookies.remove('pysTrafficSource');
-                    }
-
-                    var queryVars = getQueryVars();
-
-                    // manage utm cookies
-                    $.each(utmTerms, function (index, name) {
-
-                        if (Cookies.get('pys_' + name) === undefined && queryVars.hasOwnProperty(name)) {
-                            Cookies.set('pys_' + name, queryVars[name], { expires: expires });
+                        if(!options.cookie.disabled_first_visit_cookie)
+                        {
+                            Cookies.set('pys_first_visit', true, { expires: expires });
+                        }
+                        else {
+                            Cookies.remove('pys_first_visit')
                         }
 
-                    });
+                        if(!options.cookie.disabled_trafficsource_cookie)
+                        {
+                            Cookies.set('pysTrafficSource', getTrafficSource(), { expires: expires });
+                        }
+                        else {
+                            Cookies.remove('pysTrafficSource')
+                        }
 
+                        if(!options.cookie.disabled_landing_page_cookie)
+                        {
+                            Cookies.set('pys_landing_page',landing,{ expires: expires });
+                        }
+                        else {
+                            Cookies.remove('pys_landing_page')
+                        }
+
+                        if(!options.cookie.disabled_utmTerms_cookie)
+                        {
+                            $.each(utmTerms, function (index, name) {
+                                if (queryVars.hasOwnProperty(name)) {
+                                    Cookies.set('pys_' + name, queryVars[name], { expires: expires });
+                                } else {
+                                    Cookies.remove('pys_' + name)
+                                }
+                            });
+                        }
+                        else {
+                            $.each(utmTerms, function (index, name) {
+                                Cookies.remove('pys_' + name)
+                            });
+                        }
+
+                        if(!options.cookie.disabled_utmId_cookie)
+                        {
+                            $.each(utmId,function(index,name) {
+                                if (queryVars.hasOwnProperty(name)) {
+                                    Cookies.set('pys_' + name, queryVars[name], { expires: expires });
+                                } else {
+                                    Cookies.remove('pys_' + name)
+                                }
+                            })
+                        }
+                        else {
+                            $.each(utmId, function (index, name) {
+                                Cookies.remove('pys_' + name)
+                            });
+                        }
+
+                    }
+
+                    // save data for last visit if it new session
+                    if(isNewSession && (!options.cookie.disabled_all_cookie)) {
+                        if(!options.cookie.disabled_trafficsource_cookie)
+                        {
+                            Cookies.set('last_pysTrafficSource', getTrafficSource(), { expires: expires });
+                        }
+                        else {
+                            Cookies.remove('last_pysTrafficSource')
+                        }
+
+                        if(!options.cookie.disabled_landing_page_cookie)
+                        {
+                            Cookies.set('last_pys_landing_page',landing,{ expires: expires });
+                        }
+                        else {
+                            Cookies.remove('last_pys_landing_page')
+                        }
+
+                        if(!options.cookie.disabled_utmTerms_cookie)
+                        {
+                            $.each(utmTerms, function (index, name) {
+                                if (queryVars.hasOwnProperty(name)) {
+                                    Cookies.set('last_pys_' + name, queryVars[name], { expires: expires });
+                                } else {
+                                    Cookies.remove('last_pys_' + name)
+                                }
+                            });
+                        }
+                        else {
+                            $.each(utmTerms, function (index, name) {
+                                Cookies.remove('last_pys_' + name)
+                            });
+                        }
+
+                        if(!options.cookie.disabled_utmId_cookie)
+                        {
+                            $.each(utmId,function(index,name) {
+                                if (queryVars.hasOwnProperty(name)) {
+                                    Cookies.set('last_pys_' + name, queryVars[name], { expires: expires });
+                                } else {
+                                    Cookies.remove('last_pys_' + name)
+                                }
+                            })
+                        }
+                        else {
+                            $.each(utmId, function (index, name) {
+                                Cookies.remove('last_pys_' + name)
+                            });
+                        }
+
+                    }
+                    if(options.cookie.disabled_all_cookie)
+                    {
+                        Cookies.remove('pys_first_visit')
+                        Cookies.remove('pysTrafficSource')
+                        Cookies.remove('pys_landing_page')
+                        Cookies.remove('last_pys_landing_page')
+                        Cookies.remove('last_pysTrafficSource')
+                        Cookies.remove('pys_start_session')
+                        Cookies.remove('pys_session_limit')
+                        $.each(Utils.utmTerms, function (index, name) {
+                            Cookies.remove('pys_' + name)
+                        });
+                        $.each(Utils.utmId,function(index,name) {
+                            Cookies.remove('pys_' + name)
+                        })
+                        $.each(Utils.utmTerms, function (index, name) {
+                            Cookies.remove('last_pys_' + name)
+                        });
+                        $.each(Utils.utmId,function(index,name) {
+                            Cookies.remove('last_pys_' + name)
+                        });
+                    }
                 } catch (e) {
                     console.error(e);
                 }
-
             },
 
             initializeRequestParams: function () {
 
                 if (options.trackTrafficSource) {
-                    requestParams.traffic_source = getTrafficSource();
+                    requestParams.traffic_source = getTrafficSourceValue();
                 }
 
                 if (options.trackUTMs) {
 
-                    var utms = getUTMs();
+                    var utms = getUTMs(options.visit_data_model === "last_visit");
 
                     $.each(utmTerms, function (index, term) {
                         if (term in utms) {
@@ -766,20 +1258,22 @@ if (!String.prototype.trim) {
 
                 }
 
-                var date = new Date(),
-                    days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-                    months = ['January', 'February', 'March', 'April', 'May', 'June',
-                        'July', 'August', 'September', 'October', 'November', 'December'
-                    ],
-                    hours = ['00-01', '01-02', '02-03', '03-04', '04-05', '05-06', '06-07', '07-08',
-                        '08-09', '09-10', '10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17',
-                        '17-18', '18-19', '19-20', '20-21', '21-22', '22-23', '23-24'
-                    ];
 
-                requestParams.event_day = days[date.getDay()];
-                requestParams.event_month = months[date.getMonth()];
-                requestParams.event_hour = hours[date.getHours()];
+                var dateTime = getDateTime();
+                if(options.enable_event_time_param) {
+                    requestParams.event_time = dateTime[0];
+                }
 
+                if(options.enable_event_day_param) {
+                    requestParams.event_day = dateTime[1];
+                }
+                if(options.enable_event_month_param) {
+                    requestParams.event_month = dateTime[2];
+                }
+
+                if(options.enable_lading_page_param){
+                    requestParams.landing_page = getLandingPageValue();
+                }
             },
 
             getRequestParams: function () {
@@ -799,7 +1293,7 @@ if (!String.prototype.trim) {
 
                 // If there's a period left in the URL, then there's a extension
                 if (link.length > 0 && link.indexOf('.') !== -1) {
-                    link = link.substring(link.indexOf(".") + 1); // Remove everything but what's after the first period
+                    link = link.substring(link.lastIndexOf(".") + 1); // Remove everything but what's after the first period
                     return link;
                 } else {
                     return "";
@@ -829,48 +1323,86 @@ if (!String.prototype.trim) {
 
                 // Non-default binding used to avoid situations when some code in external js
                 // stopping events propagation, eg. returns false, and our handler will never called
-                $(document).onFirst('mouseover', triggers.join(','), function () {
+                document.addEventListener('mouseover', function(event) {
+                    var matchedElements = Array.from(document.querySelectorAll(triggers));
+                    var clickedElement = event.target;
+                    var closestMatch = clickedElement.closest(triggers);
+                    if (matchedElements.includes(clickedElement) || closestMatch){
+                        if (event.target.classList.contains('pys-mouse-over-' + eventId)) {
+                            return true;
+                        } else {
+                            event.target.classList.add('pys-mouse-over-' + eventId);
+                        }
 
-                    // do not fire event multiple times
-                    if ($(this).hasClass('pys-mouse-over-' + eventId)) {
-                        return true;
-                    } else {
-                        $(this).addClass('pys-mouse-over-' + eventId);
+                        Utils.fireTriggerEvent(eventId);
                     }
-
-                    Utils.fireDynamicEvent(eventId);
-
                 });
+
 
             },
 
             setupCSSClickEvents: function (eventId, triggers) {
-
                 // Non-default binding used to avoid situations when some code in external js
                 // stopping events propagation, eg. returns false, and our handler will never called
-                $(document).onFirst('click', triggers.join(','), function () {
-                    Utils.fireDynamicEvent(eventId);
-                });
-
+                // add event to document to support dyn class
+                document.addEventListener('click', function(event) {
+                    var matchedElements = Array.from(document.querySelectorAll(triggers));
+                    var clickedElement = event.target;
+                    var closestMatch = clickedElement.closest(triggers);
+                    if (matchedElements.includes(clickedElement) || closestMatch){
+                        Utils.fireTriggerEvent(eventId);
+                    }
+                }, true);
             },
 
             setupURLClickEvents: function () {
 
+                if( !options.triggerEventTypes.hasOwnProperty('url_click') ) {
+                    return;
+                }
                 // Non-default binding used to avoid situations when some code in external js
                 // stopping events propagation, eg. returns false, and our handler will never called
-                $('a[data-pys-event-id]').onFirst('click', function (evt) {
-
-                    $(this).attr('data-pys-event-id').split(',').forEach(function (eventId) {
-
-                        eventId = parseInt(eventId);
-
-                        if (isNaN(eventId) === false) {
-                            Utils.fireDynamicEvent(eventId);
+                document.addEventListener('click', function(event) {
+                    if (event.target.matches('a')) {
+                        var url = event.target.getAttribute('href');
+                        if (url) {
+                            Object.entries(options.triggerEventTypes.url_click).forEach(function ([eventId, triggers]) {
+                                triggers.forEach(function (trigger) {
+                                    if (Utils.compareUrl(url, trigger.value, trigger.rule)) {
+                                        Utils.fireTriggerEvent(eventId);
+                                    }
+                                });
+                            });
                         }
+                    }
+                }, true);
 
-                    });
+            },
 
-                });
+            removeUrlDomain(url) {
+                if(url.indexOf("/#") > -1) {
+                    url = url.substring(0, url.indexOf("/#"));
+                }
+                return url.replace('http://','')
+                    .replace('https://','')
+                    .replace('www.','')
+                    .trim()
+                    .replace(/^\/+/g, '')
+
+            },
+
+            compareUrl: function(base,url,rule){
+
+                if(url == "*" || url == '') return true;
+
+                base = Utils.removeUrlDomain(base)
+                url = Utils.removeUrlDomain(url)
+
+                if(rule == 'match') {
+                    return url == base;
+                } else {
+                    return base.indexOf(url) > -1
+                }
 
             },
 
@@ -890,7 +1422,7 @@ if (!String.prototype.trim) {
 
                 });
 
-                $(document).on('scroll',function () {
+                $(document).on("scroll",function () {
 
                     var scrollPos = $(window).scrollTop();
 
@@ -908,7 +1440,7 @@ if (!String.prototype.trim) {
                             scrollPosThresholds[threshold] = null;
                         }
 
-                        Utils.fireDynamicEvent(eventId);
+                        Utils.fireTriggerEvent(eventId);
 
                     });
 
@@ -917,7 +1449,7 @@ if (!String.prototype.trim) {
             },
             setupCommentEvents : function (eventId,triggers) {
                 $('form.comment-form').on("submit",function () {
-                    Utils.fireDynamicEvent(eventId);
+                    Utils.fireTriggerEvent(eventId);
                 });
             },
             /**
@@ -947,96 +1479,117 @@ if (!String.prototype.trim) {
                 return true
             },
 
-            fireDynamicEvent: function (eventId) {
+            fireTriggerEvent: function (eventId) {
 
-                if (!options.dynamicEventsParams.hasOwnProperty(eventId)) {
+                if (!options.triggerEvents.hasOwnProperty(eventId)) {
                     return;
                 }
 
                 var event = {};
+                var events = options.triggerEvents[eventId];
 
-                if (options.dynamicEventsParams[eventId].hasOwnProperty('facebook')) {
-
-                    event = Utils.copyProperties(options.dynamicEventsParams[eventId]['facebook'], {});
+                if (events.hasOwnProperty('facebook')) {
+                    event = events.facebook;
                     if(Utils.isEventInTimeWindow(event.name,event,"dyn_facebook_"+eventId)) {
-
                         Facebook.fireEvent(event.name, event);
                     }
                 }
 
-                if (options.dynamicEventsParams[eventId].hasOwnProperty('ga')) {
-
-                    event = Utils.copyProperties(options.dynamicEventsParams[eventId]['ga'], {});
-                    if(Utils.isEventInTimeWindow(event.action,event,"dyn_ga_"+eventId)) {
-                        Analytics.fireEvent(event.action, {params: event.params});
-                    }
-
-                }
-
-                if (options.dynamicEventsParams[eventId].hasOwnProperty('google_ads')) {
-
-                    event = Utils.copyProperties(options.dynamicEventsParams[eventId]['google_ads'], {});
-                    if(Utils.isEventInTimeWindow(event.action,event,"dyn_google_ads_"+eventId)) {
-                        GAds.fireEvent(event.action, {params: event.params, ids: event.ids, conversion_labels: event.conversion_labels});
+                if (events.hasOwnProperty('ga')) {
+                    event = events.ga;
+                    if(Utils.isEventInTimeWindow(event.name,event,"dyn_ga_"+eventId)) {
+                        Analytics.fireEvent(event.name, event);
                     }
                 }
 
-                if (options.dynamicEventsParams[eventId].hasOwnProperty('pinterest')) {
+                if (events.hasOwnProperty('google_ads')) {
+                    event = events.google_ads;
+                    if(Utils.isEventInTimeWindow(event.name,event,"dyn_google_ads_"+eventId)) {
+                        GAds.fireEvent(event.name, event);
+                    }
+                }
 
-                    event = Utils.copyProperties(options.dynamicEventsParams[eventId]['pinterest'], {});
+                if (events.hasOwnProperty('pinterest')) {
+                    event = events.pinterest;
                     if(Utils.isEventInTimeWindow(event.name,event,"dyn_pinterest_"+eventId)) {
-                        Pinterest.fireEvent(event.name, {params: event.params});
+                        Pinterest.fireEvent(event.name, event);;
                     }
-
                 }
 
-                if (options.dynamicEventsParams[eventId].hasOwnProperty('bing')) {
-
-                    event = Utils.copyProperties(options.dynamicEventsParams[eventId]['bing'], {});
+                if (events.hasOwnProperty('bing')) {
+                    event = events.bing;
                     if(Utils.isEventInTimeWindow(event.name,event,"dyn_bing_"+eventId)) {
-                        Bing.fireEvent(event.name, {params: event.params});
+                        Bing.fireEvent(event.name, event);;
                     }
-
                 }
+                if (events.hasOwnProperty('tiktok')) {
+                    event = events.tiktok;
+                    if(Utils.isEventInTimeWindow(event.name,event,"dyn_bing_"+eventId)) {
+                        TikTok.fireEvent(event.name, event);
+                    }
+                }
+
 
             },
 
-            fireStaticEvents: function (pixel) {
+            isFirstPurchaseFire: function ($eventName,orderId,pixel) {
+
+                if(Cookies.get("pys_"+$eventName+"_order_id_"+pixel) == orderId) {
+                    return false;
+                } else {
+                    Cookies.set("pys_"+$eventName+"_order_id_"+pixel, orderId, { expires: 1 });
+                }
+                return true;
+            },
+
+            fireStaticEvents: function (pixel, timeout = 0) {
 
                 if (options.staticEvents.hasOwnProperty(pixel)) {
 
-                    $.each(options.staticEvents[pixel], function (eventName, events) {
-                        $.each(events, function (index, eventData) {
+                    $.each(options.staticEvents[pixel], function (eventId, events) {
 
-                            eventData.fired = eventData.fired || false;
+                        //skip purchase event if this order was fired
+                        if( options.woo.hasOwnProperty('woo_purchase_on_transaction') &&
+                            options.woo.woo_purchase_on_transaction &&
+                            (eventId === "woo_purchase" || eventId === "woo_purchase_category") ) {
+                            if(!Utils.isFirstPurchaseFire(eventId,events[0].woo_order,pixel)) {
+                                return;
+                            }
+                        }
 
-                            if (!eventData.fired && Utils.isEventInTimeWindow(eventName,eventData,'static_' + pixel+"_")) {
+                        if( options.edd.hasOwnProperty('edd_purchase_on_transaction') &&
+                            options.edd.edd_purchase_on_transaction &&
+                            (eventId === "edd_purchase" || eventId === "edd_purchase_category") ) {
+                            if(!Utils.isFirstPurchaseFire(eventId,events[0].edd_order,pixel)) {
+                                return;
+                            }
+                        }
 
+
+                        $.each(events, function (index, event) {
+
+                            event.fired = event.fired || false;
+
+                            if (!event.fired && Utils.isEventInTimeWindow(event.name,event,'static_' + pixel+"_")) {
 
                                 var fired = false;
 
                                 // fire event
-                                if ('facebook' === pixel) {
-                                    fired = Facebook.fireEvent(eventName, eventData);
-                                } else if ('ga' === pixel) {
-                                    fired = Analytics.fireEvent(eventName, eventData);
-                                } else if ('google_ads' === pixel) {
-                                    fired = GAds.fireEvent(eventName, eventData);
-                                } else if ('pinterest' === pixel) {
-                                    fired = Pinterest.fireEvent(eventName, eventData);
-                                } else if ('bing' === pixel) {
-                                    fired = Bing.fireEvent(eventName, eventData);
+                                if ( pixel === 'tiktok' ) {
+                                    setTimeout(function() {
+                                        getPixelBySlag(pixel).fireEvent(event.name, event);
+                                    }, timeout * 500);
+                                    timeout++;
+                                } else {
+                                    getPixelBySlag(pixel).fireEvent(event.name, event);
                                 }
 
                                 // prevent event double event firing
-                                eventData.fired = fired;
+                                event.fired = fired;
                             }
-
                         });
                     });
-
                 }
-
             },
 
             /**
@@ -1076,7 +1629,7 @@ if (!String.prototype.trim) {
 
             loadPixels: function () {
 
-                if (options.gdpr.ajax_enabled) {
+                if (options.gdpr.ajax_enabled && !options.gdpr.consent_magic_integration_enabled) {
 
                     // retrieves actual PYS GDPR filters values which allow to avoid cache issues
                     $.get({
@@ -1091,13 +1644,21 @@ if (!String.prototype.trim) {
 
                                 options.gdpr.all_disabled_by_api = res.data.all_disabled_by_api;
                                 options.gdpr.facebook_disabled_by_api = res.data.facebook_disabled_by_api;
+                                options.gdpr.tiktok_disabled_by_api = res.data.tiktok_disabled_by_api;
                                 options.gdpr.analytics_disabled_by_api = res.data.analytics_disabled_by_api;
                                 options.gdpr.google_ads_disabled_by_api = res.data.google_ads_disabled_by_api;
                                 options.gdpr.pinterest_disabled_by_api = res.data.pinterest_disabled_by_api;
                                 options.gdpr.bing_disabled_by_api = res.data.bing_disabled_by_api;
 
+                                options.cookie.externalID_disabled_by_api = res.data.externalID_disabled_by_api;
+                                options.cookie.disabled_all_cookie = res.data.disabled_all_cookie;
+                                options.cookie.disabled_advanced_form_data_cookie = res.data.disabled_advanced_form_data_cookie;
+                                options.cookie.disabled_landing_page_cookie = res.data.disabled_landing_page_cookie;
+                                options.cookie.disabled_first_visit_cookie = res.data.disabled_first_visit_cookie;
+                                options.cookie.disabled_trafficsource_cookie = res.data.disabled_trafficsource_cookie;
+                                options.cookie.disabled_utmTerms_cookie = res.data.disabled_utmTerms_cookie;
+                                options.cookie.disabled_utmId_cookie = res.data.disabled_utmId_cookie;
                             }
-
                             loadPixels();
 
                         }
@@ -1124,27 +1685,6 @@ if (!String.prototype.trim) {
                         }
                     } else {
                         if (Cookiebot.consent[cookiebot_consent_category]) {
-                            return true;
-                        }
-                    }
-
-                    return false;
-
-                }
-
-                /**
-                 * Ginger – EU Cookie Law
-                 */
-                if (options.gdpr.ginger_integration_enabled) {
-
-                    var ginger_cookie = Cookies.get('ginger-cookie');
-
-                    if (options.gdpr[pixel + '_prior_consent_enabled']) {
-                        if (typeof ginger_cookie === 'undefined' || ginger_cookie === 'Y') {
-                            return true;
-                        }
-                    } else {
-                        if (ginger_cookie === 'Y') {
                             return true;
                         }
                     }
@@ -1195,6 +1735,105 @@ if (!String.prototype.trim) {
 
                 }
 
+                /**
+                 * ConsentMagic
+                 */
+                if (options.gdpr.consent_magic_integration_enabled && typeof CS_Data !== "undefined" ) {
+
+                    var test_prefix = CS_Data.test_prefix;
+                    if ((typeof CS_Data.cs_google_analytics_consent_mode !== "undefined" && CS_Data.cs_google_analytics_consent_mode == 1) && pixel == 'analytics') {
+                        return true;
+                    }
+                    if ((typeof CS_Data.cs_google_ads_consent_mode !== "undefined" && CS_Data.cs_google_ads_consent_mode == 1) && pixel == 'google_ads') {
+                        return true;
+                    }
+
+                    if ( CS_Data.cs_cache_enabled == 1 ) {
+                        var substring = "cs_enabled_cookie_term";
+                        var theCookies = document.cookie.split(';');
+
+                        for (var i = 1 ; i <= theCookies.length; i++) {
+                            if ( theCookies[ i - 1 ].indexOf( substring ) !== -1 ) {
+                                var categoryCookie = theCookies[ i - 1 ].replace( 'cs_enabled_cookie_term' + test_prefix + '_', '' );
+                                categoryCookie = Number( categoryCookie.replace( /\D+/g, "" ) );
+                                var cs_cookie_val = Cookies.get( 'cs_enabled_cookie_term' + test_prefix + '_' + categoryCookie );
+
+                                if ( categoryCookie === CS_Data.cs_script_cat.facebook && pixel == 'facebook' ) {
+                                    if ( cs_cookie_val == 'yes' ) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                } else if ( categoryCookie === CS_Data.cs_script_cat.bing && pixel == 'bing' ) {
+                                    if ( cs_cookie_val == 'yes' ) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                } else if ( categoryCookie === CS_Data.cs_script_cat.analytics && pixel == 'analytics' ) {
+                                    if ( cs_cookie_val == 'yes' ) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                } else if ( categoryCookie === CS_Data.cs_script_cat.gads && pixel == 'google_ads' ) {
+                                    if ( cs_cookie_val == 'yes' ) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                } else if ( categoryCookie === CS_Data.cs_script_cat.pinterest && pixel == 'pinterest' ) {
+                                    if ( cs_cookie_val == 'yes' ) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                } else if ( categoryCookie === CS_Data.cs_script_cat.tiktok && pixel == 'tiktok' ) {
+                                    if ( cs_cookie_val == 'yes' ) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        var cs_cookie = Cookies.get('cs_viewed_cookie_policy'+test_prefix);
+                        if (typeof cs_cookie === 'undefined' || cs_cookie === 'yes') {
+                            return true;
+                        }
+                    }
+
+                    return false;
+
+                }
+
+
+                /**
+                 * Real Cookie Banner
+                 */
+                if (options.gdpr.real_cookie_banner_integration_enabled) {
+                    var consentApi = window.consentApi;
+                    if (consentApi) {
+                        switch (pixel) {
+                            case "analytics":
+                                return consentApi.consentSync("http", "_ga", "*").cookieOptIn;
+                            case "facebook":
+                                return consentApi.consentSync("http", "_fbp", "*").cookieOptIn;
+                            case "pinterest":
+                                return consentApi.consentSync("http", "_pinterest_sess", ".pinterest.com").cookieOptIn;
+                            case "bing":
+                                return consentApi.consentSync("http", "_uetsid", "*").cookieOptIn;
+                            case "google_ads":
+                                return consentApi.consentSync("http", "1P_JAR", ".google.com").cookieOptIn;
+                            case 'tiktok':
+                                return consentApi.consentSync("http", "tt_webid_v2", ".tiktok.com").cookieOptIn;
+                            default:
+                                return true;
+                        }
+                    }
+                }
+
                 return true;
 
             },
@@ -1206,38 +1845,28 @@ if (!String.prototype.trim) {
                  */
                 if (options.gdpr.cookiebot_integration_enabled && typeof Cookiebot !== 'undefined') {
 
-                    Cookiebot.onaccept = function () {
-
-                        if (Cookiebot.consent[options.gdpr.cookiebot_facebook_consent_category]) {
+                    window.addEventListener("CookiebotOnConsentReady", function() {
+                        if (Cookiebot.consent.marketing) {
                             Facebook.loadPixel();
+                            Bing.loadPixel();
+                            Pinterest.loadPixel();
+                            GAds.loadPixel();
+                            TikTok.loadPixel();
                         }
-
-                        if (Cookiebot.consent[options.gdpr.cookiebot_analytics_consent_category]) {
+                        if (Cookiebot.consent.statistics) {
                             Analytics.loadPixel();
                         }
-
-                        if (Cookiebot.consent[options.gdpr.cookiebot_google_ads_consent_category]) {
-                            GAds.loadPixel();
+                        if (!Cookiebot.consent.marketing) {
+                            Facebook.disable();
+                            Pinterest.disable();
+                            Bing.disable()
+                            GAds.disable();
+                            TikTok.disable();
                         }
-
-                        if (Cookiebot.consent[options.gdpr.cookiebot_pinterest_consent_category]) {
-                            Pinterest.loadPixel();
+                        if (!Cookiebot.consent.statistics) {
+                            Analytics.disable();
                         }
-
-                        if (Cookiebot.consent[options.gdpr.cookiebot_bing_consent_category]) {
-                            Bing.loadPixel();
-                        }
-
-                    };
-
-                    Cookiebot.ondecline = function () {
-                        Facebook.disable();
-                        Analytics.disable();
-                        GAds.disable();
-                        Pinterest.disable();
-                        Bing.disable();
-                    };
-
+                    });
                 }
 
                 /**
@@ -1253,12 +1882,14 @@ if (!String.prototype.trim) {
                             GAds.loadPixel();
                             Pinterest.loadPixel();
                             Bing.loadPixel();
+                            TikTok.loadPixel();
                         } else {
                             Facebook.disable();
                             Analytics.disable();
                             GAds.disable();
                             Pinterest.disable();
                             Bing.disable();
+                            TikTok.disable();
                         }
 
                     });
@@ -1269,6 +1900,7 @@ if (!String.prototype.trim) {
                         GAds.disable();
                         Pinterest.disable();
                         Bing.disable();
+                        TikTok.disable();
                     });
 
                 }
@@ -1284,6 +1916,7 @@ if (!String.prototype.trim) {
                         GAds.loadPixel();
                         Pinterest.loadPixel();
                         Bing.loadPixel();
+                        TikTok.loadPixel();
                     });
 
                     $(document).onFirst('click', '#cookie_action_close_header_reject', function () {
@@ -1292,14 +1925,574 @@ if (!String.prototype.trim) {
                         GAds.disable();
                         Pinterest.disable();
                         Bing.disable();
+                        TikTok.disable();
                     });
 
                 }
 
+                /**
+                 * ConsentMagic
+                 */
+                if (options.gdpr.consent_magic_integration_enabled && typeof CS_Data !== "undefined") {
+                    var test_prefix = CS_Data.test_prefix,
+                        cs_refresh_after_consent = false,
+                        substring = "cs_enabled_cookie_term";
+
+                    if (CS_Data.cs_refresh_after_consent == 1) {
+                        cs_refresh_after_consent = CS_Data.cs_refresh_after_consent;
+                    }
+
+                    if (!cs_refresh_after_consent) {
+                        var theCookies = document.cookie.split(';');
+                        for (var i = 1 ; i <= theCookies.length; i++) {
+                            if (theCookies[i-1].indexOf(substring) !== -1) {
+                                var categoryCookie = theCookies[i-1].replace('cs_enabled_cookie_term'+test_prefix+'_','');
+                                categoryCookie = Number(categoryCookie.replace(/\D+/g,""));
+                                var cs_cookie_val = Cookies.get('cs_enabled_cookie_term'+test_prefix+'_'+categoryCookie);
+                                if(cs_cookie_val == 'yes') {
+                                    if (categoryCookie === CS_Data.cs_script_cat.facebook) {
+                                        Facebook.loadPixel();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.bing) {
+                                        Bing.loadPixel();
+                                    }
+                                    if (categoryCookie === CS_Data.cs_script_cat.analytics || (typeof CS_Data.cs_google_analytics_consent_mode !== "undefined" && CS_Data.cs_google_analytics_consent_mode == 1)) {
+
+                                        Analytics.loadPixel();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.gads || (typeof CS_Data.cs_google_ads_consent_mode !== "undefined" && CS_Data.cs_google_ads_consent_mode == 1)) {
+                                        GAds.loadPixel();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.pinterest) {
+                                        Pinterest.loadPixel();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.tiktok) {
+                                        TikTok.loadPixel();
+                                    }
+                                } else {
+                                    if (categoryCookie === CS_Data.cs_script_cat.facebook) {
+                                        Facebook.disable();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.bing) {
+                                        Bing.disable();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.analytics && (typeof CS_Data.cs_google_analytics_consent_mode == "undefined" || CS_Data.cs_google_analytics_consent_mode == 0)) {
+                                        Analytics.disable();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.gads && (typeof CS_Data.cs_google_ads_consent_mode == "undefined" || CS_Data.cs_google_ads_consent_mode == 0)) {
+                                        GAds.disable();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.pinterest) {
+                                        Pinterest.disable();
+                                    }
+
+                                    if (categoryCookie === CS_Data.cs_script_cat.tiktok) {
+                                        TikTok.disable();
+                                    }
+                                }
+                                if (Cookies.get('cs_enabled_advanced_matching') == 'yes') {
+                                    Facebook.loadPixel();
+                                }
+                            }
+                        }
+
+                        $(document).on('click','.cs_action_btn',function(e) {
+                            e.preventDefault();
+                            var elm = $(this),
+                                button_action = elm.attr('data-cs_action');
+
+                            if(button_action === 'allow_all') {
+                                Facebook.loadPixel();
+                                Bing.loadPixel();
+                                Analytics.loadPixel();
+                                GAds.loadPixel();
+                                Pinterest.loadPixel();
+                                TikTok.loadPixel();
+                            } else if(button_action === 'disable_all') {
+
+                                Facebook.disable();
+                                Bing.disable();
+                                if(CS_Data.cs_google_analytics_consent_mode == 0 || typeof CS_Data.cs_google_analytics_consent_mode == "undefined")
+                                {
+                                    Analytics.disable();
+                                }
+                                if(CS_Data.cs_google_ads_consent_mode == 0 || typeof CS_Data.cs_google_ads_consent_mode == "undefined")
+                                {
+                                    GAds.disable();
+                                }
+                                Pinterest.disable();
+                                TikTok.disable();
+                            }
+                        });
+                    }
+                }
+
+                /**
+                 * Real Cookie Banner
+                 */
+                if (options.gdpr.real_cookie_banner_integration_enabled) {
+                    var consentApi = window.consentApi;
+                    if (consentApi) {
+                        consentApi.consent("http", "_ga", "*")
+                            .then(Analytics.loadPixel.bind(Analytics), Analytics.disable.bind(Analytics));
+
+                        consentApi.consent("http", "_fbp", "*")
+                            .then(Facebook.loadPixel.bind(Facebook), Facebook.disable.bind(Facebook));
+
+                        consentApi.consent("http", "_pinterest_sess", ".pinterest.com")
+                            .then(Pinterest.loadPixel.bind(Pinterest), Pinterest.disable.bind(Pinterest));
+
+                        consentApi.consent("http", "_uetsid", "*")
+                            .then(Bing.loadPixel.bind(Bing), Bing.disable.bind(Bing));
+
+                        consentApi.consent("http", "1P_JAR", ".google.com")
+                            .then(GAds.loadPixel.bind(GAds), GAds.disable.bind(GAds));
+                        consentApi.consent("http", "tt_webid_v2", ".tiktok.com")
+                            .then(TikTok.loadPixel.bind(TikTok), TikTok.disable.bind(TikTok));
+                    }
+                }
+
+            },
+
+            /**
+             * Enrich
+             */
+            isCheckoutPage: function () {
+                return $('body').hasClass('woocommerce-checkout') || document.querySelector('.woocommerce-checkout') ||
+                    $('body').hasClass('edd-checkout');
+            },
+            addCheckoutFields : function() {
+                var utm = "";
+                var utms = getUTMs()
+                $.each(utmTerms, function (index, name) {
+                    if(index > 0) {
+                        utm+="|";
+                    }
+                    utm+=name+":"+utms[name];
+                });
+                var utmIdList = "";
+                var utmsIds = getUTMId()
+                $.each(utmId, function (index, name) {
+                    if(index > 0) {
+                        utmIdList+="|";
+                    }
+                    utmIdList+=name+":"+utmsIds[name];
+                });
+                var utmIdListLast = "";
+                var utmsIdsLast = getUTMId(true)
+                $.each(utmId, function (index, name) {
+                    if(index > 0) {
+                        utmIdListLast+="|";
+                    }
+                    utmIdListLast+=name+":"+utmsIdsLast[name];
+                });
+
+
+                var utmLast = "";
+                var utmsLast = getUTMs(true)
+                $.each(utmTerms, function (index, name) {
+                    if(index > 0) {
+                        utmLast+="|";
+                    }
+                    utmLast+=name+":"+utmsLast[name];
+                });
+
+                var dateTime = getDateTime();
+                var landing = Cookies.get('pys_landing_page');
+                var lastLanding = Cookies.get('last_pys_landing_page');
+                var trafic = Cookies.get('pysTrafficSource');
+                var lastTrafic = Cookies.get('last_pysTrafficSource');
+
+                var $form = null;
+                if($('body').hasClass('woocommerce-checkout')) {
+                    $form = $("form.woocommerce-checkout");
+                } else {
+                    $form = $("#edd_purchase_form");
+                }
+                var inputs = {'pys_utm':utm,
+                    'pys_utm_id':utmIdList,
+                    'pys_browser_time':dateTime.join("|"),
+                    'pys_landing':landing,
+                    'pys_source':trafic,
+                    'pys_order_type': $(".wcf-optin-form").length > 0 ? "wcf-optin" : "normal",
+
+                    'last_pys_landing':lastLanding,
+                    'last_pys_source':lastTrafic,
+                    'last_pys_utm':utmLast,
+                    'last_pys_utm_id':utmIdListLast,
+                }
+
+                Object.keys(inputs).forEach(function(key,index) {
+                    $form.append("<input type='hidden' name='"+key+"' value='"+inputs[key]+"' /> ");
+                });
+
+
+            },
+
+            /**
+             * Advanced From Data
+             */
+            saveAdvancedFormData: function (email,phone,firstName,lastName) {
+                let data = Utils.getAdvancedFormData();
+
+                if(email != null) {
+                    data["email"] = email;
+                }
+                if(phone != null) {
+                    data["phone"] = phone;
+                }
+                if(firstName != null) {
+                    data["first_name"] = firstName;
+                }
+                if(lastName != null) {
+                    data["last_name"] = lastName;
+                }
+                if(!options.cookie.disabled_advanced_form_data_cookie)
+                {
+                    Cookies.set('pys_advanced_form_data', JSON.stringify(data),{ expires: 300 } );
+                }
+                else {
+                    Cookies.remove('pys_advanced_form_data')
+                }
+                GAds.updateEnhancedConversionData()
+
+            },
+
+            getAdvancedFormData: function () {
+                let dataStr = Cookies.get("pys_advanced_form_data");
+                if(dataStr === undefined) {
+                    return {'first_name':"",'last_name':"",'email':"",'phone':""};
+                } else {
+                    return JSON.parse(dataStr);
+                }
             }
 
         };
 
+    }(options);
+
+    var TikTok = function (options) {
+
+        var initialized = false;
+
+        function fireEvent(name, event) {
+
+            if(typeof window.pys_event_data_filter === "function" && window.pys_disable_event_filter(name,'tiktok')) {
+                return;
+            }
+
+            var data = event.params;
+
+            var ids = event.pixelIds.filter(function (pixelId) {
+                return !Utils.hideMatchingPixel(pixelId, 'tiktok');
+            })
+            var params = {};
+            Utils.copyProperties(data, params);
+
+            params.eventID = event.eventID;
+            if(ids.length > 0){
+                TikTok.fireEventAPI(name, event, params);
+            }
+            ids.forEach(function(pixelId){
+                    if (options.debug) {
+                        console.log('[TikTok] ' + name, params,"pixel_id",pixelId);
+                    }
+
+                    ttq.instance(pixelId).track(name,params)
+                });
+        }
+
+        return {
+            tag: function() {
+                return "tiktok";
+            },
+            isEnabled: function () {
+                return options.hasOwnProperty('tiktok');
+            },
+            getHidePixel: function(){
+                if(this.isEnabled() && options.tiktok.hasOwnProperty('hide_pixels'))
+                {
+                    return options.tiktok.hide_pixels;
+                }
+                return [];
+            },
+            disable: function () {
+                initialized = false;
+            },
+
+            loadPixel:function () {
+                if (initialized || !this.isEnabled() || !Utils.consentGiven('tiktok')) {
+                    return;
+                }
+                for (var i = 0; i < options.tiktok.pixelIds.length; i++) {
+                    var trackingId = options.tiktok.pixelIds[i];
+                    if (!Utils.hideMatchingPixel(trackingId, 'tiktok')) {
+                        !function (w, d, t) {
+                            w.TiktokAnalyticsObject=t;
+                            var ttq=w[t]=w[t]||[];
+                            ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];
+                            ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+                            for(var i=0;i<ttq.methods.length;i++)
+                                ttq.setAndDefer(ttq,ttq.methods[i]);
+                            ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
+                            ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+
+                            //ttq.load('C60QSCQRVDG9JAKNPK2G');
+                            //ttq.page();
+                        }(window, document, 'ttq');
+                        break; // Прерываем выполнение цикла, если загрузили тег
+                    }
+                }
+
+
+                var ids = options.tiktok.pixelIds.filter(function (pixelId) {
+                    return !Utils.hideMatchingPixel(pixelId, 'tiktok');
+                })
+                ids.forEach(function (pixelId) {
+
+                    ttq.load(pixelId);
+                    ttq.page();
+                    let advancedMatching = {};
+                    if(options.tiktok.hasOwnProperty('advanced_matching')
+                        && Object.keys(options.tiktok.advanced_matching).length > 0) {
+                        advancedMatching = options.tiktok.advanced_matching;
+                        if(!advancedMatching.hasOwnProperty("external_id")){
+                            if (Cookies.get('pbid') || (options.hasOwnProperty('pbid') && options.pbid)) {
+                                advancedMatching["external_id"] = Cookies.get('pbid') ? Cookies.get('pbid') : options.pbid;
+                            }
+                        }
+                        else if(advancedMatching.external_id != Cookies.get('pbid'))
+                        {
+                            advancedMatching["external_id"] = Cookies.get('pbid') ? Cookies.get('pbid') : advancedMatching.external_id;
+                        }
+
+                        ttq.instance(pixelId).identify(advancedMatching)
+                    }
+                });
+                initialized = true;
+
+                if (options.staticEvents.hasOwnProperty('tiktok')) {
+                    var timeout = 1;
+                    setTimeout(function (timeout) {
+                        Utils.fireStaticEvents('tiktok', timeout);
+                    }, 1500, timeout)
+                }
+            },
+
+            fireEvent: function (name, data) {
+                if (!initialized || !this.isEnabled()) {
+                    return false;
+                }
+                data.delay = data.delay || 0;
+
+                if (data.delay === 0) {
+                    fireEvent(name, data);
+                } else {
+                    setTimeout(function (name, params) {
+                        fireEvent(name, params);
+                    }, data.delay * 1000, name, data);
+                }
+                return true;
+            },
+
+            fireEventAPI: function (name, event, params) {
+
+                var ids = event.pixelIds.filter(function (pixelId) {
+                    return !Utils.hideMatchingPixel(pixelId, 'tiktok');
+                })
+                var notCachedEventsIds = new Array();
+                var isAddToCartFromJs =  options.woo.hasOwnProperty("addToCartCatchMethod")
+                    && options.woo.addToCartCatchMethod === "add_cart_js";
+                if(!isAddToCartFromJs) {
+                    notCachedEventsIds.push('woo_add_to_cart_on_button_click')
+                }
+
+                if(options.tiktok.serverApiEnabled) {
+                    if(!notCachedEventsIds.includes(event.e_id)) {
+
+                        var isApiDisabled = options.gdpr.all_disabled_by_api ||
+                            options.gdpr.tiktok_disabled_by_api ||
+                            options.gdpr.cookiebot_integration_enabled ||
+                            options.gdpr.cookie_notice_integration_enabled ||
+                            options.gdpr.consent_magic_integration_enabled ||
+                            options.gdpr.cookie_law_info_integration_enabled;
+                        // Update eventID
+
+                        if( event.eventID.length == 0 && ( options.ajaxForServerEvent || event.type !== "static" ) ) {
+                            event.eventID = pys_generate_token(36);
+                        }
+
+                        // send event from server if they were block by gdpr or need send with delay
+                        if( options.ajaxForServerEvent || isApiDisabled || event.delay > 0 || event.type !== "static" ){
+
+                            var json = {
+                                action: 'pys_tiktok_api_event',
+                                pixel: TikTok.tag(),
+                                event: name,
+                                ids: ids,
+                                data:params,
+                                url:window.location.href,
+                                eventID:event.eventID,
+                                ajax_event:options.ajax_event
+                            };
+
+                            if(event.hasOwnProperty('woo_order')) {
+                                json['woo_order'] = event.woo_order;
+                            }
+
+                            if(event.hasOwnProperty('edd_order')) {
+                                json['edd_order'] = event.edd_order;
+                            }
+                            if(event.e_id === "automatic_event_internal_link"
+                                || event.e_id === "automatic_event_outbound_link"
+                                || name == 'PageView'
+                            ) {
+                                setTimeout(function(){
+                                    jQuery.ajax( {
+                                        type: 'POST',
+                                        url: options.ajaxUrl,
+                                        data: json,
+                                        headers: {
+                                            'Cache-Control': 'no-cache'
+                                        },
+                                        success: function(){},
+                                    });
+                                },500)
+                            } else {
+                                jQuery.ajax( {
+                                    type: 'POST',
+                                    url: options.ajaxUrl,
+                                    data: json,
+                                    headers: {
+                                        'Cache-Control': 'no-cache'
+                                    },
+                                    success: function(){},
+                                });
+                            }
+                        }
+                    }
+                }
+            },
+
+            onClickEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
+
+            onWooAddToCartOnSingleEvent: function (product_id, qty, product_type, is_external, $form) {
+
+                window.pysWooProductData = window.pysWooProductData || [];
+                if (!options.dynamicEvents.woo_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+
+                if (window.pysWooProductData.hasOwnProperty(product_id)) {
+                    if (window.pysWooProductData[product_id].hasOwnProperty(this.tag())) {
+
+                        var event = Utils.clone(options.dynamicEvents.woo_add_to_cart_on_button_click[this.tag()]);
+
+                        Utils.copyProperties(window.pysWooProductData[product_id][this.tag()]['params'], event.params);
+
+                        // maybe customize value option
+                        if (options.woo.addToCartOnButtonValueEnabled && options.woo.addToCartOnButtonValueOption !== 'global') {
+
+                            if (product_type === Utils.PRODUCT_BUNDLE) {
+                                var data = $(".bundle_form .bundle_data").data("bundle_form_data");
+                                var items_sum = getBundlePriceOnSingleProduct(data);
+                                event.params.value = (parseFloat(data.base_price) + items_sum) * qty;
+                            } else {
+                                event.params.value = event.params.value * qty;
+                            }
+                        }
+
+                        event.params.quantity = qty;
+
+                        this.fireEvent(event.name, event);
+
+                    }
+                }
+            },
+
+            onWooAddToCartOnButtonEvent: function (product_id) {
+                if(!options.dynamicEvents.woo_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+
+                if (window.pysWooProductData.hasOwnProperty(product_id)) {
+                    if (window.pysWooProductData[product_id].hasOwnProperty(this.tag())) {
+                        var productData = window.pysWooProductData[product_id][this.tag()]
+                        var event = Utils.clone(options.dynamicEvents.woo_add_to_cart_on_button_click[this.tag()])
+
+                        Utils.copyProperties(productData['params'], event.params)
+                        event.pixelIds = productData['pixelIds'];
+                        this.fireEvent(event.name, event);
+                    }
+                }
+            },
+
+            onEddAddToCartOnButtonEvent : function (download_id, price_index, qty) {
+                if(!options.dynamicEvents.edd_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+                var event = Utils.clone(options.dynamicEvents.edd_add_to_cart_on_button_click[this.tag()]);
+
+
+                if (window.pysEddProductData.hasOwnProperty(download_id)) {
+
+                    var index;
+
+                    if (price_index) {
+                        index = download_id + '_' + price_index;
+                    } else {
+                        index = download_id;
+                    }
+
+                    if (window.pysEddProductData[download_id].hasOwnProperty(index)) {
+                        if (window.pysEddProductData[download_id][index].hasOwnProperty(this.tag())) {
+
+                            Utils.copyProperties(window.pysEddProductData[download_id][index][this.tag()].params, event.params);
+                            this.fireEvent(event.name,event);
+
+                        }
+                    }
+
+                }
+            },
+
+            onPageScroll: function (event) {
+                if (initialized && this.isEnabled()) {
+                    this.fireEvent(event.name, event);
+                }
+            },
+
+            onWatchVideo: function (event) {
+                if (initialized && this.isEnabled() && !event.fired) {
+                    this.fireEvent(event.name, event);
+                }
+            },
+
+            onCommentEvent: function (event) {
+                if (initialized && this.isEnabled()) {
+                    this.fireEvent(event.name, event);
+                }
+            },
+
+            onAdSenseEvent: function (event) {
+                if (initialized && this.isEnabled()) {
+                    this.fireEvent(event.name, event);
+                }
+            },
+
+            onTime: function (event) {
+                if (initialized && this.isEnabled()) {
+                    this.fireEvent(event.name, event);
+                }
+            },
+        }
     }(options);
 
     var Facebook = function (options) {
@@ -1324,71 +2517,127 @@ if (!String.prototype.trim) {
             'Contact',
             'Donate'
         ];
-        var serverEventsDynamic = ["AddToCart","RemoveFromCart","ClickEvent","AdSense","WatchVideo",'Comment','Form','Download'];
-        // add dynamic events from options
-        Object.keys(options.dynamicEventsParams).forEach(function(k){
-            if(options.dynamicEventsParams[k].hasOwnProperty('facebook')) {
-                serverEventsDynamic.push(options.dynamicEventsParams[k]['facebook']['name']);
-            }
-        });
-        serverEventsDynamic.push(options.woo.affiliateEventName);
-        serverEventsDynamic.push(options.woo.paypalEventName);
 
+        var notCachedEventsIds = new Array();
+        var isAddToCartFromJs =  options.woo.hasOwnProperty("addToCartCatchMethod")
+                                && options.woo.addToCartCatchMethod === "add_cart_js";
+        if(!isAddToCartFromJs) {
+            notCachedEventsIds.push('woo_add_to_cart_on_button_click')
+        }
         var initialized = false;
         var configuredPixels = new Array();
-        function fireEvent(name, allData) {
 
-            var data = allData.params;
-            var ids = allData.pixelIds;
+        function fireEvent(name, event) {
+
+
+            if(typeof window.pys_event_data_filter === "function" && window.pys_disable_event_filter(name,'facebook')) {
+                return;
+            }
+
+            var data = event.params;
+            var ids = event.pixelIds.filter(function (pixelId) {
+                return !Utils.hideMatchingPixel(pixelId, 'facebook');
+            });
+
             var actionType = defaultEventTypes.includes(name) ? 'trackSingle' : 'trackSingleCustom';
 
             var params = {};
+
             Utils.copyProperties(data, params);
-            if(name != "FrequentShopper" && name != "VipClient" && name != "BigWhale")
-                Utils.copyProperties(options.commonEventParams, params);
             Utils.copyProperties(Utils.getRequestParams(), params);
 
+
             if(options.facebook.serverApiEnabled) {
+                if(event.e_id === "woo_remove_from_cart" ) {
+                    Facebook.updateEventId(event.name);
+                    event.eventID = Facebook.getEventId(event.name);
+                } else if(isAddToCartFromJs && event.e_id === "woo_add_to_cart_on_button_click" ) {
+                    Facebook.updateEventId(event.name);
+                    event.eventID = Facebook.getEventId(event.name);
+                } else if(!notCachedEventsIds.includes(event.e_id)) {
+                    var isApiDisabled = options.gdpr.all_disabled_by_api ||
+                        options.gdpr.facebook_disabled_by_api ||
+                        options.gdpr.cookiebot_integration_enabled ||
+                        options.gdpr.cookie_notice_integration_enabled ||
+                        options.gdpr.consent_magic_integration_enabled ||
+                        options.gdpr.cookie_law_info_integration_enabled;
+                    // Update eventID
 
-                var isApiDisabled = options.gdpr.all_disabled_by_api ||
-                    options.gdpr.facebook_disabled_by_api ||
-                    options.gdpr.cookiebot_integration_enabled ||
-                    options.gdpr.ginger_integration_enabled ||
-                    options.gdpr.cookie_notice_integration_enabled ||
-                    options.gdpr.cookie_law_info_integration_enabled;
+                    if( options.ajaxForServerEvent || event.type !== "static") {
+                        event.eventID = pys_generate_token(36);
+                    }
 
-                // Update eventID
-                if( options.facebook.ajaxForServerEvent || serverEventsDynamic.includes(name) ) {
-                    allData.eventID = pys_generate_token(36);
-                }
-                // send event from server if they was bloc by gdpr or need send with delay
-                if( options.facebook.ajaxForServerEvent || isApiDisabled || allData.delay > 0 || serverEventsDynamic.includes(name) ){
+                    // send event from server if they was bloc by gdpr or need send with delay
+                    if( options.ajaxForServerEvent || isApiDisabled || event.delay > 0 || event.type !== "static" ){
 
-                    var json = {
-                        action: 'pys_api_event',
-                        pixel: 'facebook',
-                        event: name,
-                        ids: ids,
-                        data:data,
-                        eventID:allData.eventID,
-                        woo_order:allData.woo_order,
-                        edd_order:allData.edd_order,
-                    };
+                        var json = {
+                            action: 'pys_api_event',
+                            pixel: 'facebook',
+                            event: name,
+                            ids: ids,
+                            data:params,
+                            url:window.location.href,
+                            eventID:event.eventID,
+                            ajax_event:options.ajax_event
+                        };
 
+                        if(event.hasOwnProperty('woo_order')) {
+                            json['woo_order'] = event.woo_order;
+                        }
 
-                    if(allData.delay > 0) {
-                        jQuery.ajax( {
-                            type: 'POST',
-                            url: options.ajaxUrl,
-                            data: json,
-                            headers: {
-                                'Cache-Control': 'no-cache'
-                            },
-                            success: function(){},
-                        });
-                    } else {
-                        // Some times Woo Session is replace it self when user click add to cart button or click
-                        setTimeout(function (json) {
+                        if(event.hasOwnProperty('edd_order')) {
+                            json['edd_order'] = event.edd_order;
+                        }
+                        if(event.e_id === "automatic_event_internal_link"
+                            || event.e_id === "automatic_event_outbound_link"
+                        ) {
+                            setTimeout(function(){
+                                jQuery.ajax( {
+                                    type: 'POST',
+                                    url: options.ajaxUrl,
+                                    data: json,
+                                    headers: {
+                                        'Cache-Control': 'no-cache'
+                                    },
+                                    success: function(){},
+                                });
+                            },500)
+                        } else if(name == 'PageView') {
+                            let expires = parseInt(options.cookie_duration);
+                            var currentTimeInSeconds=Date.now();
+                            var randomNum = Math.floor(1000000000 + Math.random() * 9000000000);
+                            timeoutDelay = 0;
+
+                            if(!Cookies.get('_fbp'))
+                            {
+                                timeoutDelay = 100;
+                            }
+                            if(getUrlParameter('fbclid') && !Cookies.get('_fbc'))
+                            {
+                                timeoutDelay = 100;
+                            }
+                            setTimeout(function(){
+                                if(!Cookies.get('_fbp'))
+                                {
+                                    Cookies.set('_fbp','fb.1.'+currentTimeInSeconds+'.'+randomNum,  { expires: expires })
+                                }
+                                if(getUrlParameter('fbclid') && !Cookies.get('_fbc'))
+                                {
+                                    Cookies.set('_fbc', 'fb.1.'+currentTimeInSeconds+'.'+getUrlParameter('fbclid'),  { expires: expires })
+                                }
+                                jQuery.ajax( {
+                                    type: 'POST',
+                                    url: options.ajaxUrl,
+                                    data: json,
+                                    headers: {
+                                        'Cache-Control': 'no-cache'
+                                    },
+                                    success: function(){},
+                                });
+                            },timeoutDelay)
+                        }
+                        else
+                        {
                             jQuery.ajax( {
                                 type: 'POST',
                                 url: options.ajaxUrl,
@@ -1398,41 +2647,78 @@ if (!String.prototype.trim) {
                                 },
                                 success: function(){},
                             });
-                        }, 1000, json);
+                        }
+
+
+                    }
+
+                    if( event.e_id !== "automatic_event_signup" && name == "CompleteRegistration" && options.facebook.wooCRSendFromServer ) {
+                        return;
                     }
                 }
 
-                if( name == "CompleteRegistration" && options.facebook.wooCRSendFromServer ) {
-                    return;
-                }
             }
 
 
 
             if (options.debug) {
-                console.log('[Facebook] ' + name, params,"pixel_ids",ids,"eventID",allData.eventID);
+                console.log('[Facebook] ' + name, params,"pixel_ids",ids,"eventID",event.eventID);
             }
-            var args = {};
-            // add eventID for deduplicate events @see https://developers.facebook.com/docs/marketing-api/conversions-api/deduplicate-pixel-and-server-events/
-            if(allData.hasOwnProperty('eventID')) {
-                args.eventID = allData.eventID;
-            }
-
-
             // fire event for each pixel id
             ids.forEach(function (pixelId) {
+                // add eventID for deduplicate events @see https://developers.facebook.com/docs/marketing-api/conversions-api/deduplicate-pixel-and-server-events/
+                var args = {};
+                if(options.facebook.serverApiEnabled && event.hasOwnProperty('eventID')) {
+                    args.eventID = pixelId+event.eventID;
+                }
+
                 Facebook.maybeInitPixel(pixelId);
                 fbq(actionType,pixelId, name, params,args);
             });
+
         }
 
         /**
          * Public API
          */
         return {
-
+            tag: function() {
+              return "facebook";
+            },
             isEnabled: function () {
                 return options.hasOwnProperty('facebook');
+            },
+            getHidePixel: function(){
+                if(this.isEnabled() && options.facebook.hasOwnProperty('hide_pixels'))
+                {
+                    return options.facebook.hide_pixels;
+                }
+                return [];
+            },
+            initEventIdCookies: function (key) {
+                var ids = {};
+                ids[key] = pys_generate_token(36)
+                Cookies.set('pys_fb_event_id', JSON.stringify(ids));
+            },
+
+            updateEventId:function(key) {
+                var cooData = Cookies.get("pys_fb_event_id")
+                if(cooData === undefined) {
+                    this.initEventIdCookies(key);
+                } else {
+                    var data = JSON.parse(cooData);
+                    data[key] = pys_generate_token(36);
+                    Cookies.set('pys_fb_event_id', JSON.stringify(data) );
+                }
+            },
+
+            getEventId:function (key) {
+                var data = Cookies.get("pys_fb_event_id");
+                if(data === undefined) {
+                    this.initEventIdCookies(key);
+                    data = Cookies.get("pys_fb_event_id");
+                }
+                return JSON.parse(data)[key];
             },
 
             disable: function () {
@@ -1468,8 +2754,11 @@ if (!String.prototype.trim) {
                 }(window,
                     document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
 
+                var ids = options.facebook.pixelIds.filter(function (pixelId) {
+                    return !Utils.hideMatchingPixel(pixelId, 'facebook');
+                });
                 // initialize default pixel
-                options.facebook.pixelIds.forEach(function (pixelId) {
+                ids.forEach(function (pixelId) {
                     Facebook.maybeInitPixel(pixelId);
                 });
                 initialized = true;
@@ -1477,17 +2766,76 @@ if (!String.prototype.trim) {
                 Utils.fireStaticEvents('facebook');
 
             },
+            advancedMatching: function () {
+                if(options.facebook.advancedMatchingEnabled) {
+                    let advancedMatchingForm = Utils.getAdvancedFormData();
+                    let advancedMatching = {};
+                    if(Object.keys(options.facebook.advancedMatching).length > 0) {
+                        advancedMatching = options.facebook.advancedMatching;
+                    }
+
+                    if(!advancedMatching.hasOwnProperty("em")
+                        && advancedMatchingForm.hasOwnProperty("email") && advancedMatchingForm["email"].length > 0) {
+                        advancedMatching["em"] = advancedMatchingForm["email"];
+                    }
+                    if(!advancedMatching.hasOwnProperty("ph")
+                        && advancedMatchingForm.hasOwnProperty("phone") && advancedMatchingForm["phone"].length > 0) {
+                        advancedMatching["ph"] = advancedMatchingForm["phone"];
+                    }
+                    if(!advancedMatching.hasOwnProperty("fn")
+                        && advancedMatchingForm.hasOwnProperty("first_name") && advancedMatchingForm["first_name"].length > 0) {
+                        advancedMatching["fn"] = advancedMatchingForm["first_name"];
+                    }
+                    if(!advancedMatching.hasOwnProperty("ln")
+                        && advancedMatchingForm.hasOwnProperty("last_name") && advancedMatchingForm["last_name"].length > 0) {
+                        advancedMatching["ln"] = advancedMatchingForm["last_name"];
+                    }
+                    if(!advancedMatching.hasOwnProperty("external_id")){
+                        if (Cookies.get('pbid') || (options.hasOwnProperty('pbid') && options.pbid)) {
+                            advancedMatching["external_id"] = Cookies.get('pbid') ? Cookies.get('pbid') : options.pbid;
+                        }
+                    }
+                    else if(advancedMatching.external_id != Cookies.get('pbid'))
+                    {
+                        advancedMatching["external_id"] = Cookies.get('pbid') ? Cookies.get('pbid') : advancedMatching.external_id;
+                    }
+
+                    if(Object.keys(advancedMatching).length > 0) {
+                        return advancedMatching;
+                    }
+                }
+                return false
+            },
             maybeInitPixel: function(pixelId) {
 
                 if(configuredPixels.includes(pixelId)) return;
 
-                if (options.facebook.removeMetadata) {
+                if (options.facebook.removeMetadata || Utils.hideMatchingPixel(pixelId, this.tag())) {
                     fbq('set', 'autoConfig', false, pixelId);
                 }
-                if(options.facebook.advancedMatching.length === 0) {
-                    fbq('init', pixelId);
+                let advancedMatching = Facebook.advancedMatching();
+
+                if (options.gdpr.consent_magic_integration_enabled && typeof CS_Data !== "undefined") {
+                    if(!advancedMatching) {
+                        fbq('init', pixelId);
+                    } else {
+                        var cs_advanced_matching = Cookies.get('cs_enabled_advanced_matching'+test_prefix);
+                        if (jQuery('#cs_enabled_advanced_matching'+test_prefix).length > 0) {
+                            if (cs_advanced_matching == 'yes') {
+                                fbq('init', pixelId, advancedMatching);
+                            } else {
+                                fbq('init', pixelId);
+                            }
+                        } else {
+                            fbq('init', pixelId, advancedMatching);
+                        }
+                    }
                 } else {
-                    fbq('init', pixelId, options.facebook.advancedMatching);
+                    if(!advancedMatching) {
+                        fbq('init', pixelId);
+                    }  else {
+                        fbq('init', pixelId, advancedMatching);
+                    }
                 }
                 configuredPixels.push(pixelId);
             },
@@ -1517,215 +2865,162 @@ if (!String.prototype.trim) {
 
             },
 
-            onAdSenseEvent: function () {
+            onAdSenseEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
 
-                if (initialized && this.isEnabled()) {
-                    if(options.facebook.adSenseEventEnabled) {
-                        var param = {};
-                        this.fireEvent('AdSense', {
-                            params: Utils.copyProperties(options.facebook.contentParams, param),
-                            pixelIds : options.facebook.defoultPixelIds
-                        });
-                    }
+            onClickEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
 
+            onWatchVideo: function (event) {
+                this.fireEvent(event.name, event);
+            },
 
-                    $.each(options.dynamicEventsTriggers, function (triggerType, events) {
-                        $.each(events, function (eventId, triggers) {
-                            switch (triggerType) {
-                                case 'ad_sense_click':
-                                    Utils.fireDynamicEvent(eventId);
-                                    break;
-                            }
-                        });
-                    });
-                }
+            onCommentEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
+
+            onFormEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
+
+            onDownloadEvent: function (event) {
+                this.fireEvent(event.name, event);
 
             },
 
-            onClickEvent: function (params) {
-
-                if (initialized && this.isEnabled() && options.facebook.clickEventEnabled) {
-                    this.fireEvent('ClickEvent', {
-                        params: Utils.copyProperties(options.facebook.contentParams, params),
-                        pixelIds : options.facebook.defoultPixelIds
-                    });
-                }
-
-            },
-
-            onWatchVideo: function (params) {
-
-                if (initialized && this.isEnabled()) {
-                    if(options.facebook.watchVideoEnabled) {
-                        var data = Utils.copyProperties(options.facebook.contentParams, params)
-
-                        this.fireEvent('WatchVideo', {
-                            params: data,
-                            pixelIds : options.facebook.defoultPixelIds
-                        });
-                    }
-                    if(params.event_trigger == "play") {
-                        $.each(options.dynamicEventsTriggers, function (triggerType, events) {
-                            $.each(events, function (eventId, triggers) {
-                                switch (triggerType) {
-                                    case 'video_play':
-                                        Utils.fireDynamicEvent(eventId);
-                                        break;
-                                }
-
-                            });
-                        });
-                    }
-
-                }
-
-            },
-
-            onCommentEvent: function () {
-
-                if (initialized && this.isEnabled() && options.facebook.commentEventEnabled) {
-                    var data = {};
-                    this.fireEvent('Comment', {
-                        params: Utils.copyProperties(options.facebook.contentParams, data),
-                        pixelIds : options.facebook.defoultPixelIds
-                    });
-
-                }
-
-            },
-
-            onFormEvent: function (params) {
-
-                if (initialized && this.isEnabled() && options.facebook.formEventEnabled) {
-
-                    this.fireEvent('Form', {
-                        params: Utils.copyProperties(options.facebook.contentParams, params),
-                        pixelIds : options.facebook.defoultPixelIds
-                    });
-
-                }
-
-            },
-
-            onDownloadEvent: function (params) {
-
-                if (initialized && this.isEnabled() && options.facebook.downloadEnabled) {
-
-                    this.fireEvent('Download', {
-                        params: Utils.copyProperties(options.facebook.contentParams, params),
-                        pixelIds : options.facebook.defoultPixelIds
-                    });
-
-                }
-
-            },
 
             onWooAddToCartOnButtonEvent: function (product_id) {
+                if(!options.dynamicEvents.woo_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
 
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('facebook')) {
 
-                        this.fireEvent('AddToCart', {
-                            params: Utils.copyProperties(window.pysWooProductData[product_id]['facebook']['params'], {}),
-                            pixelIds : window.pysWooProductData[product_id]['facebook']['pixelIds']
-                        });
+                        var event = Utils.clone(options.dynamicEvents.woo_add_to_cart_on_button_click[this.tag()])
 
+                        Utils.copyProperties(window.pysWooProductData[product_id]['facebook']['params'], event.params)
+                        event.pixelIds = window.pysWooProductData[product_id]['facebook']['pixelIds'];
+                        this.fireEvent(event.name, event);
                     }
                 }
-
             },
 
             onWooAddToCartOnSingleEvent: function (product_id, qty, product_type, is_external, $form) {
 
                 window.pysWooProductData = window.pysWooProductData || [];
+                if(!options.dynamicEvents.woo_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+
+                if (product_type === Utils.PRODUCT_VARIABLE && !options.facebook.wooVariableAsSimple) {
+                    product_id = parseInt($form.find('input[name="variation_id"]').val());
+                }
 
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('facebook')) {
 
-                        if (product_type === PRODUCT_VARIABLE && !options.facebook.wooVariableAsSimple) {
-                            product_id = parseInt($form.find('input[name="variation_id"]').val());
+                        var event = Utils.clone(options.dynamicEvents.woo_add_to_cart_on_button_click.facebook);
+
+
+                        Utils.copyProperties(window.pysWooProductData[product_id]['facebook']['params'], event.params);
+
+                        var groupValue = 0;
+                        if(product_type === Utils.PRODUCT_GROUPED ) {
+                            $form.find(".woocommerce-grouped-product-list .qty").each(function(index){
+                                var childId = $(this).attr('name').replaceAll("quantity[","").replaceAll("]","");
+                                var quantity = parseInt($(this).val());
+                                if(isNaN(quantity)) {
+                                    quantity = 0;
+                                }
+                                var childItem = window.pysWooProductData[product_id]['facebook'].grouped[childId];
+
+                                if(quantity == 0) {
+                                    event.params.content_ids.forEach(function(el,index,array) {
+                                        if(el == childItem.content_id) {
+                                            array.splice(index, 1);
+                                        }
+                                    });
+                                }
+
+                                if(event.params.hasOwnProperty('contents')) {
+                                    event.params.contents.forEach(function(el,index,array) {
+                                        if(el.id == childItem.content_id) {
+                                            if(quantity > 0){
+                                                el.quantity = quantity;
+                                            } else {
+                                                array.splice(index, 1);
+                                            }
+                                        }
+                                    });
+                                }
+
+
+                                groupValue += childItem.price * quantity;
+                            });
+                            if(groupValue == 0) return; // skip if no items selected
                         }
 
-                        var params = Utils.copyProperties(window.pysWooProductData[product_id]['facebook']['params'], {});
-                        var pixelIds = window.pysWooProductData[product_id]['facebook']['pixelIds'];
+
 
                         // maybe customize value option
                         if (options.woo.addToCartOnButtonValueEnabled && options.woo.addToCartOnButtonValueOption !== 'global') {
 
-                            if(product_type === PRODUCT_BUNDLE) {
+                            if(product_type === Utils.PRODUCT_GROUPED) {
+                                    event.params.value = groupValue;
+                            } else if(product_type === Utils.PRODUCT_BUNDLE) {
                                 var data = $(".bundle_form .bundle_data").data("bundle_form_data");
                                 var items_sum = getBundlePriceOnSingleProduct(data);
-                                params.value = (data.base_price+items_sum )* qty;
+                                event.params.value = (parseFloat(data.base_price) + items_sum )* qty;
                             } else {
-                                params.value = params.value * qty;
+                                event.params.value = event.params.value * qty;
                             }
-
                         }
 
                         // only when non Facebook for WooCommerce logic used
-                        if (params.hasOwnProperty('contents')) {
-                            params.contents[0].quantity = qty;
+                        if (event.params.hasOwnProperty('contents') && product_type !== Utils.PRODUCT_GROUPED) {
+                            event.params.contents[0].quantity = qty;
+
                         }
 
-                        var event_name = is_external ? options.woo.affiliateEventName : 'AddToCart';
+                        var event_name = is_external ? options.woo.affiliateEventName : event.name;
 
-                        this.fireEvent(event_name, {
-                            params: params,
-                            pixelIds : pixelIds
-                        });
+                        this.fireEvent(event_name, event);
 
                     }
                 }
 
             },
 
-            onWooRemoveFromCartEvent: function (cart_item_hash) {
-
-                window.pysWooRemoveFromCartData = window.pysWooRemoveFromCartData || [];
-
-                if (window.pysWooRemoveFromCartData[cart_item_hash].hasOwnProperty('facebook')) {
-
-                    var params = Utils.copyProperties(window.pysWooRemoveFromCartData[cart_item_hash]['facebook'], {})
-
-                    this.fireEvent('RemoveFromCart', {
-                        params: params,
-                        pixelIds : options.facebook.defoultPixelIds
-
-                    });
-
-                }
-
+            onWooRemoveFromCartEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
             onWooAffiliateEvent: function (product_id) {
+                if(!options.dynamicEvents.woo_affiliate.hasOwnProperty(this.tag()))
+                    return;
+                var event = Utils.clone(options.dynamicEvents.woo_affiliate[this.tag()]);
+
 
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('facebook')) {
 
-                        this.fireEvent(options.woo.affiliateEventName, {
-                            params: Utils.copyProperties(window.pysWooProductData[product_id]['facebook'], {}),
-                            pixelIds : options.facebook.defoultPixelIds
-                        });
+                        Utils.copyProperties(window.pysWooProductData[product_id][this.tag()].params, event.params)
+                        this.fireEvent(options.woo.affiliateEventName, event);
 
                     }
                 }
 
             },
 
-            onWooPayPalEvent: function () {
-
-                window.pysWooPayPalData = window.pysWooPayPalData || [];
-
-                if (window.pysWooPayPalData.hasOwnProperty('facebook')) {
-                    this.fireEvent(options.woo.paypalEventName, {
-                        params: Utils.copyProperties(window.pysWooPayPalData['facebook'], options.facebook.contentParams),
-                        pixelIds : options.facebook.defoultPixelIds
-                    });
-                }
-
+            onWooPayPalEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
             onEddAddToCartOnButtonEvent: function (download_id, price_index, qty) {
+                if(!options.dynamicEvents.edd_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+                var event = Utils.clone(options.dynamicEvents.edd_add_to_cart_on_button_click[this.tag()]);
 
                 if (window.pysEddProductData.hasOwnProperty(download_id)) {
 
@@ -1740,22 +3035,20 @@ if (!String.prototype.trim) {
                     if (window.pysEddProductData[download_id].hasOwnProperty(index)) {
                         if (window.pysEddProductData[download_id][index].hasOwnProperty('facebook')) {
 
-                            var params = Utils.copyProperties(window.pysEddProductData[download_id][index]['facebook']["params"], {});
-                            var pixelIds = window.pysEddProductData[download_id][index]['facebook']['pixelIds'];
+
+                            Utils.copyProperties(window.pysEddProductData[download_id][index]['facebook']["params"], event.params)
+
                             // maybe customize value option
                             if (options.edd.addToCartOnButtonValueEnabled && options.edd.addToCartOnButtonValueOption !== 'global') {
-                                params.value = params.value * qty;
+                                event.params.value = event.params.value * qty;
                             }
 
                             // update contents qty param
-                            var contents = JSON.parse(params.contents);
+                            var contents = event.params.contents;
                             contents[0].quantity = qty;
-                            params.contents = JSON.stringify(contents);
+                            event.params.contents = JSON.stringify(contents);
 
-                            this.fireEvent('AddToCart', {
-                                params: params,
-                                pixelIds : pixelIds
-                            });
+                            this.fireEvent(event.name,event);
 
                         }
                     }
@@ -1764,19 +3057,15 @@ if (!String.prototype.trim) {
 
             },
 
-            onEddRemoveFromCartEvent: function (item) {
-
-                if (item.hasOwnProperty('facebook')) {
-
-                    this.fireEvent('RemoveFromCart', {
-                        params: Utils.copyProperties(item['facebook'], {}),
-                        pixelIds : options.facebook.defoultPixelIds
-                    });
-
-                }
-
-            }
-
+            onEddRemoveFromCartEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
+            onPageScroll: function (event) {
+                this.fireEvent(event.name, event);
+            },
+            onTime: function (event) {
+                this.fireEvent(event.name, event);
+            },
         };
 
     }(options);
@@ -1798,21 +3087,21 @@ if (!String.prototype.trim) {
          * @param name
          * @param data
          */
-        function fireEvent(name, data) {
-
-            var eventParams = Utils.copyProperties(data, {});
-            var requestParams = Utils.getRequestParams();
-            if(options.ga.isUse4Version) {
-                delete requestParams.traffic_source;
+        function fireEvent(name, event) {
+            if(typeof window.pys_event_data_filter === "function" && window.pys_disable_event_filter(name,'ga')) {
+                return;
             }
 
-            Utils.copyProperties(requestParams, eventParams);
+            var eventParams = event.params;
+            var data = event.params;
+            var ids = event.trackingIds.filter(function (pixelId) {
+                return !Utils.hideMatchingPixel(pixelId, 'ga');
+            })
+            Utils.copyProperties(Utils.getRequestParams(), eventParams);
 
+            var _fireEvent = function (tracking_id,name,params) {
 
-            var _fireEvent = function (tracking_id) {
-
-                var params = Utils.copyProperties(eventParams, { send_to: tracking_id });
-
+                params['send_to'] = tracking_id;
                 if (options.debug) {
                     console.log('[Google Analytics #' + tracking_id + '] ' + name, params);
                 }
@@ -1821,8 +3110,10 @@ if (!String.prototype.trim) {
 
             };
 
-            options.ga.trackingIds.forEach(function (tracking_id) {
-                _fireEvent(tracking_id);
+            ids.forEach(function (tracking_id) {
+                var copyParams = Utils.copyProperties(eventParams, {}); // copy params because mapParamsTov4 can modify it
+                var params = mapParamsTov4(tracking_id,name,copyParams)
+                _fireEvent(tracking_id, name, params);
             });
 
         }
@@ -1844,15 +3135,136 @@ if (!String.prototype.trim) {
 
         }
 
+        function mapParamsTov4(tag,name,param) {
+            //GA4 automatically collects a number of parameters for all events
+            delete param.page_title;
+            delete param.event_url;
+            delete param.landing_page;
+            // end
+            if(isv4(tag)) {
+                delete param.traffic_source;
+                delete param.event_category;
+                delete param.event_label;
+                delete param.ecomm_prodid;
+                delete param.ecomm_pagetype;
+                delete param.ecomm_totalvalue;
+                delete param.non_interaction;
+                if(name === 'search') {
+                    param['search'] = param.search_term;
+                    delete param.search_term;
+                    delete param.non_interaction;
+                    delete param.dynx_itemid;
+                    delete param.dynx_pagetype;
+                    delete param.dynx_totalvalue;
+                }
+            } else {
+
+                switch (name) {
+                    case 'OutboundClick':
+                    case 'InternalClick': {
+                        let params = {
+                            event_category: "Key Actions",
+                            event_action: name,
+                            non_interaction: param.non_interaction,
+                        }
+                        if(param.hasOwnProperty("target_url")) {
+                            params['event_label'] = param.target_url
+                        }
+                        if(options.trackTrafficSource) {
+                            params['traffic_source'] = param.traffic_source
+                        }
+                        return params;
+                    }
+
+                    case 'AdSense' :
+                    case 'Comment' :
+                    case 'login' :
+                    case 'sign_up' :
+                    case 'EmailClick' :
+                    case 'TelClick' : {
+                        let params = {
+                            event_category: "Key Actions",
+                            event_action: name,
+                              non_interaction: param.non_interaction,
+                        }
+                        return params;
+                    }
+                    case 'Form' : {
+                        let params = {
+                            event_category: "Key Actions",
+                            event_action: name,
+                              non_interaction: param.non_interaction,
+                        }
+                        var formClass = (typeof param.form_class != 'undefined') ? 'class: ' + param.form_class : '';
+                        if(formClass != "") {
+                            params["event_label"] = formClass;
+                        }
+                        return params;
+                    }
+                    case 'Download' : {
+                        let params = {
+                            event_category: "Key Actions",
+                            event_action: name,
+                            event_label: param.download_name,
+                              non_interaction: param.non_interaction,
+                        }
+                        return params;
+                    }
+                    case 'TimeOnPage' :
+                    case 'PageScroll' : {
+                        let params = {
+                            event_category: "Key Actions",
+                            event_action: name,
+                            event_label: document.title,
+                              non_interaction: param.non_interaction,
+                        }
+                        return params;
+                    }
+                    case 'search' : {
+                        let params = {
+                            event_category: "Key Actions",
+                            event_action: name,
+                            event_label: param.search_term,
+                              non_interaction: param.non_interaction,
+                        }
+                        return params;
+                    }
+                }
+
+                //delete standard params
+
+                delete param.post_type;
+                delete param.post_id;
+                delete param.plugin;
+                delete param.user_role;
+                delete param.cartlows;
+                delete param.cartflows_flow;
+                delete param.cartflows_step;
+            }
+            return param;
+        }
+
+        function isv4(tag) {
+            return tag.indexOf('G') === 0;
+        }
+
         /**
          * Public API
          */
         return {
-
+            tag: function() {
+                return "ga";
+            },
             isEnabled: function () {
                 return options.hasOwnProperty('ga');
             },
-
+            getHidePixel: function(){
+                if(this.isEnabled() && options.ga.hasOwnProperty('hide_pixels'))
+                {
+                    return options.ga.hide_pixels;
+                }
+                return [];
+            },
             disable: function () {
                 initialized = false;
             },
@@ -1863,7 +3275,14 @@ if (!String.prototype.trim) {
                     return;
                 }
 
-                Utils.loadGoogleTag(options.ga.trackingIds[0]);
+
+                for (var i = 0; i < options.ga.trackingIds.length; i++) {
+                    var trackingId = options.ga.trackingIds[i];
+                    if (!Utils.hideMatchingPixel(trackingId, 'ga')) {
+                        Utils.loadGoogleTag(trackingId);
+                        break; // Прерываем выполнение цикла, если загрузили тег
+                    }
+                }
 
                 var cd = {
                     'dimension1': 'event_hour',
@@ -1900,25 +3319,54 @@ if (!String.prototype.trim) {
                     };
                 }
 
-                if(options.ga.isUse4Version) {
-                    if(options.ga.disableAdvertisingFeatures) {
-                        config.allow_google_signals = false
-                    }
-                    if(options.ga.disableAdvertisingPersonalization) {
-                        config.allow_ad_personalization_signals = false
-                    }
-                }
+                var ids = options.ga.trackingIds.filter(function (pixelId) {
+                    return !Utils.hideMatchingPixel(pixelId, 'ga');
+                });
 
-                // configure tracking ids
+                ids.forEach(function (trackingId,index) {
 
-                options.ga.trackingIds.forEach(function (trackingId,index) {
-                    if(options.ga.isDebugEnabled.includes("index_"+index)) {
-                        config.debug_mode = true;
-                    } else {
-                        config.debug_mode = false;
+                    var obj = options.ga.isDebugEnabled;
+                    var searchValue = "index_"+index;
+                    config.debug_mode = false;
+
+                    for (var key in obj) {
+                        if (obj.hasOwnProperty(key) && obj[key] === searchValue) {
+                            config.debug_mode = true;
+                            break;
+                        }
                     }
-                    gtag('config', trackingId, config);
-                    
+                    if(!config.debug_mode)
+                    {
+                        delete config.debug_mode;
+                    }
+                    if(isv4(trackingId)) {
+                        if(options.ga.disableAdvertisingFeatures) {
+                            config.allow_google_signals = false
+                        }
+                        if(options.ga.disableAdvertisingPersonalization) {
+                            config.allow_ad_personalization_signals = false
+                        }
+                    }
+
+                    if (options.gdpr.cookiebot_integration_enabled && typeof Cookiebot !== 'undefined') {
+
+                        var cookiebot_consent_category = options.gdpr['cookiebot_analytics_consent_category'];
+                        if (options.gdpr['analytics_prior_consent_enabled']) {
+                            if (Cookiebot.consented === true && Cookiebot.consent[cookiebot_consent_category]) {
+                                gtag('config', trackingId, config);
+                            }
+                        } else {
+                            if (Cookiebot.consent[cookiebot_consent_category]) {
+                                gtag('config', trackingId, config);
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        gtag('config', trackingId, config);
+                    }
+
                 });
 
                 initialized = true;
@@ -1938,13 +3386,13 @@ if (!String.prototype.trim) {
 
                 if (data.delay === 0) {
 
-                    fireEvent(name, data.params);
+                    fireEvent(name, data);
 
                 } else {
 
                     setTimeout(function (name, params) {
                         fireEvent(name, params);
-                    }, data.delay * 1000, name, data.params);
+                    }, data.delay * 1000, name, data);
 
                 }
 
@@ -1952,179 +3400,61 @@ if (!String.prototype.trim) {
 
             },
 
-            onAdSenseEvent: function () {
-                // not supported
+            onAdSenseEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
-            onClickEvent: function (action, params) {
+            onClickEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
 
-                if (initialized && this.isEnabled() && options.ga.clickEventEnabled) {
-                    if(options.ga.isUse4Version) {
-                        this.fireEvent("ClickEvent", {
-                            params: {
-                                link_type: params.link_type,
-                                target_url: action,
-                                link_text:params.tag_text,
-                                non_interaction: options.ga.clickEventNonInteractive,
-
-                                post_type: pysOptions.postType,
-                                post_id: pysOptions.postId,
-                                content_name: pysOptions.postTitle,
-                                event_url:window.location.href,
-                                user_role:pysOptions.userRoles
-                            }
-                        });
-                    } else {
-                        this.fireEvent(params.link_type, {
-                            params: {
-                                event_category: 'ClickEvent',
-                                event_label: action,
-                                non_interaction: options.ga.clickEventNonInteractive
-                            }
-                        });
-                    }
-
-
+            onWatchVideo: function (event) {
+                if(!event.hasOwnProperty("youtube_disabled")
+                    || !event.youtube_disabled
+                    || event.params.video_type !== "youtube") {
+                    this.fireEvent(event.name, event);
                 }
+            },
+
+            onCommentEvent: function (event) {
+
+                this.fireEvent(event.name, event);
 
             },
 
-            onWatchVideo: function (params) {
+            onFormEvent: function (event) {
 
-                if (initialized && this.isEnabled() && options.ga.watchVideoEnabled) {
-                    if(options.ga.isUse4Version) {
-                        this.fireEvent('WatchVideo', {
-                            params: {
-                                event_trigger: params.event_trigger,
-                                video_id: params.video_id,
-                                video_title: params.video_title,
-                                video_type: params.video_type,
-
-                                post_type: pysOptions.postType,
-                                post_id: pysOptions.postId,
-                                content_name: pysOptions.postTitle,
-                                event_url:window.location.href,
-
-                                user_role:pysOptions.userRoles,
-                                non_interaction: options.ga.watchVideoEventNonInteractive
-                            }
-                        });
-                    } else {
-                        this.fireEvent(params.event_trigger, {
-                            params: {
-                                event_category: 'WatchVideo',
-                                event_label: params.video_title,
-                                non_interaction: options.ga.watchVideoEventNonInteractive
-                            }
-                        });
-                    }
-
-
-                }
+                this.fireEvent(event.name, event);
 
             },
 
-            onCommentEvent: function () {
+            onDownloadEvent: function (event) {
 
-                if (initialized && this.isEnabled() && options.ga.commentEventEnabled) {
-
-                    if(options.ga.isUse4Version) {
-                        this.fireEvent('Comment', {
-                            params: {
-                                post_type: pysOptions.postType,
-                                post_id: pysOptions.postId,
-                                content_name: pysOptions.postTitle,
-                                event_url:window.location.href,
-
-                                user_role:pysOptions.userRoles,
-                                non_interaction: options.ga.commentEventNonInteractive
-                            }
-                        });
-                    } else {
-                        this.fireEvent(pysOptions.postType + ' comment', {
-                            params: {
-                                event_category: 'Comment',
-                                event_label: document.location.href,
-                                non_interaction: options.ga.commentEventNonInteractive
-                            }
-                        });
-                    }
-
-
-                }
+                this.fireEvent(event.name, event);
 
             },
 
-            onFormEvent: function (params) {
-
-                if (initialized && this.isEnabled() && options.ga.formEventEnabled) {
-
-                    var action = {
-                        class: (typeof params.form_class != 'undefined') ? 'class: ' + params.form_class : '',
-                        id: (typeof params.form_id != 'undefined') ? 'id: ' + params.form_id : ''
-                    };
-
-                    if(options.ga.isUse4Version) {
-                        this.fireEvent("Form", {
-                            params: {
-                                form_class: action.class,
-                                form_id:action.id,
-                                form_submit_label: params.form_submit_label,
-
-                                post_type: pysOptions.postType,
-                                post_id: pysOptions.postId,
-                                content_name: pysOptions.postTitle,
-                                event_url:window.location.href,
-
-                                user_role:pysOptions.userRoles,
-                                non_interaction: options.ga.formEventNonInteractive
-                            }
-                        });
-                    } else {
-                        this.fireEvent(action.class + ' ' + action.id, {
-                            params: {
-                                event_category: 'Form',
-                                event_label: params.form_submit_label,
-                                non_interaction: options.ga.formEventNonInteractive
-                            }
-                        });
-                    }
-
-
-
-                }
-
-            },
-
-            onDownloadEvent: function (params) {
-
-                if (initialized && this.isEnabled() && options.ga.downloadEnabled) {
-                    if(options.ga.isUse4Version) {
-                        // remove this event
-                    } else {
-                        this.fireEvent(params.download_url, {
-                            params: {
-                                event_category: 'Download',
-                                event_label: params.download_name,
-                                non_interaction: options.ga.downloadEventNonInteractive
-                            }
-                        });
-                    }
-
-
-                }
-
-            },
-
-            onWooAddToCartOnButtonEvent: function (product_id) {
+            onWooAddToCartOnButtonEvent: function (product_id, prod_info = null) {
+                if(!options.dynamicEvents.woo_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
 
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('ga')) {
-
-                        this.fireEvent('add_to_cart', {
-                            params: window.pysWooProductData[product_id]['ga']
-                        });
-
+                        var event = Utils.clone(options.dynamicEvents.woo_add_to_cart_on_button_click[this.tag()]);
+                        Utils.copyProperties(window.pysWooProductData[product_id]['ga'].params, event.params)
+                        event.trackingIds = window.pysWooProductData[product_id]['ga']['trackingIds'];
+                        if(prod_info)
+                        {
+                            if(prod_info['pys_list_name_productlist_id'])
+                            {
+                                event.params.items[0]['item_list_id'] = prod_info['pys_list_name_productlist_id']
+                            }
+                            if(prod_info['pys_list_name_productlist_name'])
+                            {
+                                event.params.items[0]['item_list_name'] =prod_info['pys_list_name_productlist_name']
+                            }
+                        }
+                        this.fireEvent(event.name, event);
                     }
                 }
 
@@ -2134,106 +3464,124 @@ if (!String.prototype.trim) {
 
                 window.pysWooProductData = window.pysWooProductData || [];
 
-                if (product_type === PRODUCT_VARIABLE) {
+                if(!options.dynamicEvents.woo_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+                var event = Utils.clone(options.dynamicEvents.woo_add_to_cart_on_button_click[this.tag()]);
+
+                if (product_type === Utils.PRODUCT_VARIABLE && !options.ga.wooVariableAsSimple) {
                     product_id = parseInt($form.find('input[name="variation_id"]').val());
                 }
 
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('ga')) {
 
-                        var params = Utils.copyProperties(window.pysWooProductData[product_id]['ga'], {});
+                        Utils.copyProperties(window.pysWooProductData[product_id]['ga'].params, event.params);
 
-                        // maybe customize value option
-                        if (options.woo.addToCartOnButtonValueEnabled && options.woo.addToCartOnButtonValueOption !== 'global') {
-                            if(product_type === PRODUCT_BUNDLE) {
-                                var data = $(".bundle_form .bundle_data").data("bundle_form_data");
-                                var items_sum = getBundlePriceOnSingleProduct(data);
-                                params.items[0].price = (data.base_price+items_sum )* qty;
-                            } else {
-                                params.items[0].price = params.items[0].price * qty;
+
+                        if(product_type === Utils.PRODUCT_GROUPED ) {
+                            var groupValue = 0;
+                            $form.find(".woocommerce-grouped-product-list .qty").each(function(index){
+                                var childId = $(this).attr('name').replaceAll("quantity[","").replaceAll("]","");
+                                var quantity = parseInt($(this).val());
+                                if(isNaN(quantity)) {
+                                    quantity = 0;
+                                }
+                                var childItem = window.pysWooProductData[product_id]['ga'].grouped[childId];
+                                event.params.items.forEach(function(el,index,array) {
+                                    if(el.id == childItem.content_id) {
+                                        if(quantity > 0){
+                                            el.quantity = quantity;
+                                            el.price = childItem.price;
+                                        } else {
+                                            array.splice(index, 1);
+                                        }
+                                    }
+                                });
+                                groupValue += childItem.price * quantity;
+                            });
+
+                            if(options.woo.addToCartOnButtonValueEnabled &&
+                                options.woo.addToCartOnButtonValueOption !== 'global' &&
+                                event.params.hasOwnProperty('ecomm_totalvalue')) {
+                                event.params.ecomm_totalvalue = groupValue;
                             }
 
+                            if(groupValue == 0) return; // skip if no items selected
+                        } else {
+                            // update items qty param
+                            event.params.items[0].quantity = qty;
                         }
 
-                        // update items qty param
-                        params.items[0].quantity = qty;
+                        // maybe customize value option
+                        if (options.woo.addToCartOnButtonValueEnabled &&
+                            options.woo.addToCartOnButtonValueOption !== 'global' &&
+                            product_type !== Utils.PRODUCT_GROUPED)
+                        {
+                            if(event.params.hasOwnProperty('ecomm_totalvalue')) {
+                                event.params.ecomm_totalvalue = event.params.items[0].price * qty;
+                            }
+                        }
 
-                        var eventName = is_external ? options.woo.affiliateEventName : 'add_to_cart';
+
+
+                        var eventName = is_external ? options.woo.affiliateEventName : event.name;
                         eventName = normalizeEventName(eventName);
 
-                        this.fireEvent(eventName, {
-                            params: params
-                        });
+                        this.fireEvent(eventName, event);
 
                     }
                 }
 
             },
 
-            onWooCheckoutProgressStep: function (step) {
-
-                window.pysWooCheckoutProgress = window.pysWooCheckoutProgress || [];
-                if (window.pysWooCheckoutProgress.hasOwnProperty(step)) {
-
-                    this.fireEvent('checkout_progress', {
-                        params: Utils.copyProperties(window.pysWooCheckoutProgress[step].data, {})
-                    });
-
-                }
-
+            onWooCheckoutProgressStep: function (event) {
+                this.fireEvent(event.name, event);
             },
 
-            onWooSelectContent: function (params) {
-                this.fireEvent('select_content', {
-                    params: params
-                });
-            },
+            onWooSelectContent: function (event) {
+                const select_prod_list = {};
 
-            onWooRemoveFromCartEvent: function (cart_item_hash) {
-
-                window.pysWooRemoveFromCartData = window.pysWooRemoveFromCartData || [];
-
-                if (window.pysWooRemoveFromCartData[cart_item_hash].hasOwnProperty('ga')) {
-
-                    this.fireEvent('remove_from_cart', {
-                        params: Utils.copyProperties(window.pysWooRemoveFromCartData[cart_item_hash]['ga'], {})
-                    });
-
+                if (event.params.items[0].item_list_name !== undefined) {
+                    select_prod_list.list_name = event.params.items[0].item_list_name;
                 }
 
+                if (event.params.items[0].item_list_id !== undefined) {
+                    select_prod_list.list_id = event.params.items[0].item_list_id;
+                }
+                Cookies.set('select_prod_list', select_prod_list, { expires: 1 });
+                this.fireEvent(event.name, event);
+            },
+
+            onWooRemoveFromCartEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
             onWooAffiliateEvent: function (product_id) {
+                if(!options.dynamicEvents.woo_affiliate.hasOwnProperty(this.tag()))
+                    return;
+                var event = options.dynamicEvents.woo_affiliate[this.tag()];
 
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('ga')) {
 
-                        var eventName = normalizeEventName(options.woo.affiliateEventName);
-
-                        this.fireEvent(eventName, {
-                            params: window.pysWooProductData[product_id]['ga']
-                        });
+                        event = Utils.clone(event );
+                        Utils.copyProperties(window.pysWooProductData[product_id][this.tag()], event.params)
+                        this.fireEvent(normalizeEventName(options.woo.affiliateEventName), event);
 
                     }
                 }
 
             },
 
-            onWooPayPalEvent: function () {
-
-                eventName = normalizeEventName(options.woo.paypalEventName);
-
-                window.pysWooPayPalData = window.pysWooPayPalData || [];
-
-                if (window.pysWooPayPalData.hasOwnProperty('ga')) {
-                    this.fireEvent(eventName, {
-                        params: Utils.copyProperties(window.pysWooPayPalData['ga'], {})
-                    });
-                }
-
+            onWooPayPalEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
             onEddAddToCartOnButtonEvent: function (download_id, price_index, qty) {
+                if(!options.dynamicEvents.edd_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+                var event = Utils.clone(options.dynamicEvents.edd_add_to_cart_on_button_click[this.tag()]);
+
 
                 if (window.pysEddProductData.hasOwnProperty(download_id)) {
 
@@ -2248,14 +3596,12 @@ if (!String.prototype.trim) {
                     if (window.pysEddProductData[download_id].hasOwnProperty(index)) {
                         if (window.pysEddProductData[download_id][index].hasOwnProperty('ga')) {
 
-                            var params = Utils.copyProperties(window.pysEddProductData[download_id][index]['ga'], {});
+                            Utils.copyProperties(window.pysEddProductData[download_id][index]['ga'].params, event.params);
 
                             // update items qty param
-                            params.items[0].quantity = qty;
+                            event.params.items[0].quantity = qty;
 
-                            this.fireEvent('add_to_cart', {
-                                params: params
-                            });
+                            this.fireEvent(event.name,event);
 
                         }
                     }
@@ -2264,18 +3610,20 @@ if (!String.prototype.trim) {
 
             },
 
-            onEddRemoveFromCartEvent: function (item) {
+            onEddRemoveFromCartEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
 
-                if (item.hasOwnProperty('ga')) {
-
-                    this.fireEvent('remove_from_cart', {
-                        params: Utils.copyProperties(item['ga'], {})
-                    });
-
+            onPageScroll: function (event) {
+                if (initialized && this.isEnabled()) {
+                    this.fireEvent(event.name, event);
                 }
-
-            }
-
+            },
+            onTime: function (event) {
+                if (initialized && this.isEnabled()) {
+                    this.fireEvent(event.name, event);
+                }
+            },
         };
 
     }(options);
@@ -2283,7 +3631,7 @@ if (!String.prototype.trim) {
     var GAds = function (options) {
 
         var initialized = false;
-
+        var isAllowEnhancedConversions = false
         /**
          * Fires event
          *
@@ -2293,17 +3641,34 @@ if (!String.prototype.trim) {
          * @link: https://developers.google.com/gtagjs/reference/parameter
          */
         function fireEvent(name, data) {
-            var _params = data.params;
-            var ids = data.ids;
-            var conversion_labels = data.conversion_labels;
 
+            if(typeof window.pys_event_data_filter === "function" && window.pys_disable_event_filter(event_name,'google_ads')) {
+                return;
+            }
+            var _params = Utils.copyProperties(data.params,{});
+            var ids = data.ids.filter(function (pixelId) {
+                return !Utils.hideMatchingPixel(pixelId, 'google_ads');
+            });
+            var coversionIds = data.hasOwnProperty('conversion_ids') ? data.conversion_ids.filter(function (conversion_id) {
+                return !Utils.hideMatchingPixel(conversion_id, 'google_ads');
+            }) : [];
+            var conversion_labels = data.hasOwnProperty('conversion_labels') ? data.conversion_labels.filter(function (conversion_label) {
+                conversion_id = conversion_label.split('/')[0];
+                return !Utils.hideMatchingPixel(conversion_id, 'google_ads');
+            }) : [];
+
+            Utils.copyProperties(Utils.getRequestParams(), _params);
             var _fireEvent = function (conversion_id,event_name) {
 
                 params = Utils.copyProperties(_params, { send_to: conversion_id });
-                Utils.copyProperties(Utils.getRequestParams(), params);
+
                 if("conversion" === event_name) {
                     delete params.items;
+                    delete params.ecomm_pagetype;
+                    delete params.ecomm_prodid;
+                    delete params.ecomm_totalvalue;
                 }
+
                 if (options.debug) {
                     console.log('[Google Ads #' + conversion_id + '] ' + event_name, params);
                 }
@@ -2318,7 +3683,7 @@ if (!String.prototype.trim) {
                 });
             } else { // if normal event have conversion_label or custom without conversion_label
 
-                options.google_ads.conversion_ids.forEach(function (conversion_id) { // send main event
+                coversionIds.forEach(function (conversion_id) { // send main event
                     _fireEvent(conversion_id,name);
                 });
 
@@ -2351,13 +3716,33 @@ if (!String.prototype.trim) {
          * Public API
          */
         return {
-
+            tag: function() {
+                return "google_ads";
+            },
             isEnabled: function () {
                 return options.hasOwnProperty('google_ads');
             },
-
+            getHidePixel: function(){
+                if(this.isEnabled() && options.google_ads.hasOwnProperty('hide_pixels'))
+                {
+                    return options.google_ads.hide_pixels;
+                }
+                return [];
+            },
             disable: function () {
                 initialized = false;
+            },
+
+            updateEnhancedConversionData : function () {
+
+                if(isAllowEnhancedConversions) {
+                    var advanced = Utils.getAdvancedFormData()
+                    if(Object.keys(options.google_ads.user_data).length == 0) {
+                        if(advanced["email"].length > 0) {
+                            gtag('set', 'user_data', {"email":advanced["email"]});
+                        }
+                    }
+                }
             },
 
             loadPixel: function () {
@@ -2366,11 +3751,35 @@ if (!String.prototype.trim) {
                     return;
                 }
 
-                Utils.loadGoogleTag(options.google_ads.conversion_ids[0]);
-
+                for (var i = 0; i < options.google_ads.conversion_ids.length; i++) {
+                    var trackingId = options.google_ads.conversion_ids[i];
+                    if (!Utils.hideMatchingPixel(trackingId, 'google_ads')) {
+                        Utils.loadGoogleTag(trackingId);
+                        break; // Прерываем выполнение цикла, если загрузили тег
+                    }
+                }
+                var ids = options.google_ads.conversion_ids.filter(function (pixelId) {
+                    return !Utils.hideMatchingPixel(pixelId, 'google_ads');
+                });
                 // configure conversion ids
-                options.google_ads.conversion_ids.forEach(function (conversion_id) {
+                ids.forEach(function (conversion_id,index) {
+
                     gtag('config', conversion_id);
+
+                    if(options.google_ads.enhanced_conversion.includes("index_"+index)) {
+                        isAllowEnhancedConversions = true
+                        gtag('config', conversion_id,{ 'allow_enhanced_conversions':true });
+                    }
+
+                    if(isAllowEnhancedConversions) {
+                        var advanced = Utils.getAdvancedFormData()
+                        if(Object.keys(options.google_ads.user_data).length > 0) {
+                            gtag('set', 'user_data', options.google_ads.user_data);
+                        } else if(advanced["email"].length > 0) {
+                            gtag('set', 'user_data', {"email":advanced["email"]});
+                        }
+                    }
+
                 });
 
                 initialized = true;
@@ -2402,90 +3811,46 @@ if (!String.prototype.trim) {
 
             },
 
-            onAdSenseEvent: function () {
-                // not supported
+            onAdSenseEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
             onClickEvent: function (action, params) {
                 //disabled
             },
 
-            onWatchVideo: function (params) {
-
-                if (initialized && this.isEnabled() && options.google_ads.watchVideoEnabled) {
-
-                    this.fireEvent(params.event_trigger, {
-                        params: {
-                            event_category: 'WatchVideo',
-                            event_label: params.video_title
-                        }
-                    });
-
-                }
-
+            onWatchVideo: function (event) {
+                this.fireEvent(event.name, event);
             },
 
-            onCommentEvent: function () {
-
-                if (initialized && this.isEnabled() && options.google_ads.commentEventEnabled) {
-
-                    this.fireEvent(pysOptions.postType + ' comment', {
-                        params: {
-                            event_category: 'Comment',
-                            event_label: document.location.href
-                        }
-                    });
-
-                }
-
+            onCommentEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
-            onFormEvent: function (params) {
-
-                if (initialized && this.isEnabled() && options.google_ads.formEventEnabled) {
-
-                    var action = {
-                        class: (typeof params.form_class != 'undefined') ? 'class: ' + params.form_class : '',
-                        id: (typeof params.form_id != 'undefined') ? 'id: ' + params.form_id : ''
-                    };
-
-                    this.fireEvent(action.class + ' ' + action.id, {
-                        params: {
-                            event_category: 'Form',
-                            event_label: params.form_submit_label
-                        }
-                    });
-
-                }
-
+            onFormEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
-            onDownloadEvent: function (params) {
-
-                if (initialized && this.isEnabled() && options.google_ads.downloadEnabled) {
-
-                    this.fireEvent(params.download_url, {
-                        params: {
-                            event_category: 'Download',
-                            event_label: params.download_name
-                        }
-                    });
-
-                }
-
+            onDownloadEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
+
+
+
 
             onWooAddToCartOnButtonEvent: function (product_id) {
+
+                if(!options.dynamicEvents.woo_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
 
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('google_ads')) {
 
-                        this.fireEvent('add_to_cart', {
-                            params: window.pysWooProductData[product_id]['google_ads']['params'],
-                            ids: window.pysWooProductData[product_id]['google_ads']['ids'],
-                            conversion_labels: window.pysWooProductData[product_id]['google_ads']['conversion_labels']
-                        });
-
+                        var event = Utils.clone(options.dynamicEvents.woo_add_to_cart_on_button_click[this.tag()])
+                        Utils.copyProperties(window.pysWooProductData[product_id]['google_ads']['params'].params, event.params)
+                        event["ids"] = window.pysWooProductData[product_id]['google_ads']['ids']
+                        event["conversion_labels"] = window.pysWooProductData[product_id]['google_ads']['conversion_labels']
+                        this.fireEvent(event.name, event);
                     }
                 }
 
@@ -2494,94 +3859,106 @@ if (!String.prototype.trim) {
             onWooAddToCartOnSingleEvent: function (product_id, qty, product_type, is_external, $form) {
 
                 window.pysWooProductData = window.pysWooProductData || [];
+                if(!options.dynamicEvents.woo_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+                var event = Utils.clone(options.dynamicEvents.woo_add_to_cart_on_button_click[this.tag()]);
 
-                if (product_type === PRODUCT_VARIABLE) {
+                if (product_type === Utils.PRODUCT_VARIABLE && !options.google_ads.wooVariableAsSimple) {
                     product_id = parseInt($form.find('input[name="variation_id"]').val());
                 }
+
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('google_ads')) {
 
-                        var params = Utils.copyProperties(window.pysWooProductData[product_id]['google_ads']["params"], {});
-                        var ids = window.pysWooProductData[product_id]['google_ads']["ids"];
-                        var conversion_labels = window.pysWooProductData[product_id]['google_ads']["conversion_labels"];
+                        Utils.copyProperties(window.pysWooProductData[product_id]['google_ads']["params"], event.params);
+                        event["ids"] = window.pysWooProductData[product_id]['google_ads']['ids']
+                        event["conversion_labels"] = window.pysWooProductData[product_id]['google_ads']['conversion_labels']
 
-                        if(product_type === PRODUCT_BUNDLE) {
-                            var data = $(".bundle_form .bundle_data").data("bundle_form_data");
-                            var items_sum = getBundlePriceOnSingleProduct(data);
-                            params.value =  (data.base_price+items_sum )* qty;
+                        var groupValue = 0;
+                        if(product_type === Utils.PRODUCT_GROUPED ) {
+                            $form.find(".woocommerce-grouped-product-list .qty").each(function(index){
+                                var childId = $(this).attr('name').replaceAll("quantity[","").replaceAll("]","");
+                                var quantity = parseInt($(this).val());
+                                if(isNaN(quantity)) {
+                                    quantity = 0;
+                                }
+
+                                var childItem = window.pysWooProductData[product_id]['google_ads'].grouped[childId];
+
+                                if(options.woo.addToCartOnButtonValueEnabled &&
+                                    options.woo.addToCartOnButtonValueOption !== 'global') {
+
+                                    event.params.items.forEach(function(el,index,array) {
+                                        if(el.id == childItem.content_id) {
+                                            if(quantity > 0){
+                                                el.quantity = quantity;
+                                                el.price = childItem.price;
+                                            } else {
+                                                array.splice(index, 1);
+                                            }
+                                        }
+                                    });
+                                }
+                                groupValue += childItem.price * quantity;
+                            });
+                            if(groupValue == 0) return;
+                            event.params.value = groupValue;
+                        } else {
+                            // update items qty param
+                            event.params.items[0].quantity = qty;
                         }
+
+
 
                         // maybe customize value option
-                        if (options.woo.addToCartOnButtonValueEnabled && options.woo.addToCartOnButtonValueOption !== 'global') {
-                            if(product_type === PRODUCT_BUNDLE) {
-                                params.items[0].price = (data.base_price+items_sum )* qty;
-                            } else {
-                                params.items[0].price = params.items[0].price * qty;
-                            }
+                        if (options.woo.addToCartOnButtonValueEnabled &&
+                            options.woo.addToCartOnButtonValueOption !== 'global' &&
+                            product_type !== Utils.PRODUCT_GROUPED) {
+                            event.params.value =  event.params.value * qty;
                         }
 
-                        // update items qty param
-                        params.items[0].quantity = qty;
 
-                        var eventName = is_external ? options.woo.affiliateEventName : 'add_to_cart';
+
+                        var eventName = is_external ? options.woo.affiliateEventName : event.name;
                         eventName = normalizeEventName(eventName);
 
-                        this.fireEvent(eventName, {
-                            params: params,
-                            ids:ids,
-                            conversion_labels:conversion_labels
-                        });
+                        this.fireEvent(eventName, event);
 
                     }
                 }
 
             },
 
-            onWooRemoveFromCartEvent: function (cart_item_hash) {
-
-                window.pysWooRemoveFromCartData = window.pysWooRemoveFromCartData || [];
-
-                if (window.pysWooRemoveFromCartData[cart_item_hash].hasOwnProperty('google_ads')) {
-
-                    this.fireEvent('remove_from_cart', {
-                        params: Utils.copyProperties(window.pysWooRemoveFromCartData[cart_item_hash]['google_ads'], {})
-                    });
-
-                }
-
+            onWooRemoveFromCartEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
             onWooAffiliateEvent: function (product_id) {
+                if(!options.dynamicEvents.woo_affiliate.hasOwnProperty(this.tag()))
+                    return;
+                var event = options.dynamicEvents.woo_affiliate[this.tag()];
 
                 if (window.pysWooProductData.hasOwnProperty(product_id)) {
                     if (window.pysWooProductData[product_id].hasOwnProperty('google_ads')) {
 
-                        var eventName = normalizeEventName(options.woo.affiliateEventName);
-
-                        this.fireEvent(eventName, {
-                            params: window.pysWooProductData[product_id]['google_ads']
-                        });
+                        event = Utils.clone(event)
+                        Utils.copyProperties(window.pysWooProductData[product_id][this.tag()], event.params)
+                        this.fireEvent(normalizeEventName(options.woo.affiliateEventName), event);
 
                     }
                 }
 
             },
 
-            onWooPayPalEvent: function () {
-
-                eventName = normalizeEventName(options.woo.paypalEventName);
-
-                window.pysWooPayPalData = window.pysWooPayPalData || [];
-
-                if (window.pysWooPayPalData.hasOwnProperty('google_ads')) {
-                    this.fireEvent(eventName, {
-                        params: Utils.copyProperties(window.pysWooPayPalData['google_ads'], {})
-                    });
-                }
-
+            onWooPayPalEvent: function (event) {
+                this.fireEvent(event.name, event);
             },
 
             onEddAddToCartOnButtonEvent: function (download_id, price_index, qty) {
+                if(!options.dynamicEvents.edd_add_to_cart_on_button_click.hasOwnProperty(this.tag()))
+                    return;
+                var event = options.dynamicEvents.edd_add_to_cart_on_button_click[this.tag()];
+
 
                 if (window.pysEddProductData.hasOwnProperty(download_id)) {
 
@@ -2596,17 +3973,13 @@ if (!String.prototype.trim) {
                     if (window.pysEddProductData[download_id].hasOwnProperty(index)) {
                         if (window.pysEddProductData[download_id][index].hasOwnProperty('google_ads')) {
 
-                            var params = Utils.copyProperties(window.pysEddProductData[download_id][index]['google_ads']['params'], {});
-                            var ids = window.pysEddProductData[download_id][index]['google_ads']['ids'];
-                            var conversion_labels = window.pysEddProductData[download_id][index]['google_ads']['conversion_labels'];
+                            event = Utils.clone(event)
+                            Utils.copyProperties(window.pysEddProductData[download_id][index]['google_ads']['params'], event.params);
+                            event.ids = window.pysEddProductData[download_id][index]['google_ads']['ids']
                             // update items qty param
-                            params.items[0].quantity = qty;
+                            //params.items[0].quantity = qty;
 
-                            this.fireEvent('add_to_cart', {
-                                params: params,
-                                ids: ids,
-                                conversion_labels: conversion_labels
-                            });
+                            this.fireEvent(event.name, event);
 
                         }
                     }
@@ -2615,17 +3988,19 @@ if (!String.prototype.trim) {
 
             },
 
-            onEddRemoveFromCartEvent: function (item) {
-
-                if (item.hasOwnProperty('google_ads')) {
-
-                    this.fireEvent('remove_from_cart', {
-                        params: Utils.copyProperties(item['google_ads'], {})
-                    });
-
+            onEddRemoveFromCartEvent: function (event) {
+                this.fireEvent(event.name, event);
+            },
+            onPageScroll: function (event) {
+                if (initialized && this.isEnabled()) {
+                    this.fireEvent(event.name, event);
                 }
-
-            }
+            },
+            onTime: function (event) {
+                if (initialized && this.isEnabled()) {
+                    this.fireEvent(event.name, event);
+                }
+            },
 
         };
 
@@ -2636,138 +4011,407 @@ if (!String.prototype.trim) {
     window.pys.Analytics = Analytics;
     window.pys.GAds = GAds;
     window.pys.Utils = Utils;
+    window.pys.TikTok = TikTok;
 
-    const PRODUCT_SIMPLE = 0;
-    const PRODUCT_VARIABLE = 1;
-    const PRODUCT_BUNDLE = 2;
+
 
     $(document).ready(function () {
 
+        if(Cookies.get('form_track'))
+        {
+            Cookies.remove('form_track')
+        }
 
+        if($("#pys_late_event").length > 0) {
+            var events =  JSON.parse($("#pys_late_event").attr("dir"));
+            for(var key in events) {
+                var event = {};
+                event[events[key].e_id] = [events[key]];
+                if(options.staticEvents.hasOwnProperty(key)) {
+                    Object.assign(options.staticEvents[key], event);
+                } else {
+                    options.staticEvents[key] = event;
+                }
+
+            }
+        }
 
         var Pinterest = Utils.setupPinterestObject();
         var Bing = Utils.setupBingObject();
+        if(options.hasOwnProperty('cookie'))
+        {
+            if(options.cookie.externalID_disabled_by_api || options.cookie.disabled_all_cookie)
+            {
+                Cookies.remove('pbid')
+            }
+            if(options.cookie.disabled_advanced_form_data_cookie || options.cookie.disabled_all_cookie)
+            {
+                Cookies.remove('pys_advanced_form_data')
+            }
+            if(options.cookie.disabled_landing_page_cookie || options.cookie.disabled_all_cookie)
+            {
+                Cookies.remove('pys_landing_page')
+                Cookies.remove('last_pys_landing_page')
+            }
+            if(options.cookie.disabled_trafficsource_cookie || options.cookie.disabled_all_cookie)
+            {
+                Cookies.remove('pysTrafficSource')
+                Cookies.remove('last_pysTrafficSource')
+            }
+            if(options.cookie.disabled_first_visit_cookie || options.cookie.disabled_all_cookie)
+            {
+                Cookies.remove('pys_first_visit')
+
+            }
+            if(options.cookie.disabled_utmTerms_cookie || options.cookie.disabled_all_cookie)
+            {
+                $.each(Utils.utmTerms, function (index, name) {
+                    Cookies.remove('pys_' + name)
+                });
+                $.each(Utils.utmTerms, function (index, name) {
+                    Cookies.remove('last_pys_' + name)
+                });
+            }
+            if(options.cookie.disabled_utmId_cookie || options.cookie.disabled_all_cookie)
+            {
+                $.each(Utils.utmId,function(index,name) {
+                    Cookies.remove('pys_' + name)
+                })
+                $.each(Utils.utmId,function(index,name) {
+                    Cookies.remove('last_pys_' + name)
+                });
+            }
+        }
+
 
         Utils.manageCookies();
+
         Utils.initializeRequestParams();
         Utils.setupGdprCallbacks();
 
+
+        //Setup Advanced Form Data
+        if(options.enable_auto_save_advance_matching) {
+            $(document).on("blur","input[type='email']",function () {
+                let email = $(this).val().trim().toLowerCase();
+                if(Utils.validateEmail(email)) {
+                    Utils.saveAdvancedFormData(email,null,null,null);
+                }
+            })
+            $(document).on("blur","input[type='tel']",function () {
+                let phone = $(this).val().trim().replace(/\D/g, "");
+                if(phone.length > 5) {
+                    Utils.saveAdvancedFormData(null,phone,null,null);
+                }
+            })
+            $(document).on("blur","input[type='text']",function () {
+                let name;
+                if($(this).attr("name") && $(this).attr("name") != '')
+                {
+                    name = $(this).attr("name").trim()
+                }
+                if(name && options.advance_matching_fn_names.includes(name)) {
+                    let value = $(this).val().trim();
+                    if(value.length > 0) {
+                        Utils.saveAdvancedFormData(null,null,value,null);
+                    }
+                }
+                if(name && options.advance_matching_ln_names.includes(name)) {
+                    let value = $(this).val().trim();
+                    if(value.length > 0) {
+                        Utils.saveAdvancedFormData(null,null,null,value);
+                    }
+                }
+                if(name && options.advance_matching_tel_names.includes(name)) {
+                    let value = $(this).val().trim();
+                    if(value.length > 0) {
+                        Utils.saveAdvancedFormData(null,value,null,null);
+                    }
+                }
+
+            })
+        }
+
+
+
+
         // setup Click Event
-        if (options.clickEventEnabled) {
+        if (
+            options.dynamicEvents.hasOwnProperty("automatic_event_internal_link") ||
+            options.dynamicEvents.hasOwnProperty("automatic_event_outbound_link") ||
+            options.dynamicEvents.hasOwnProperty("automatic_event_tel_link") ||
+            options.dynamicEvents.hasOwnProperty("automatic_event_email_link") ||
+            options.dynamicEvents.hasOwnProperty("automatic_event_download")
+        ) {
 
             $(document).onFirst('click', 'a, button, input[type="button"], input[type="submit"]', function (e) {
 
+                var $elem = $(this);
+
+
+                // Download
+                if(options.dynamicEvents.hasOwnProperty("automatic_event_download")) {
+                    var isFired = false;
+                    if ($elem.is('a')) {
+                        var href = $elem.attr('href');
+                        if (typeof href !== "string") {
+                            return;
+                        }
+                        href = href.trim();
+                        var extension = Utils.getLinkExtension(href);
+                        var track_download = false;
+
+                        if (extension.length > 0) {
+
+                            if(options.dynamicEvents.hasOwnProperty("automatic_event_download") ) {
+                                var pixels = Object.keys(options.dynamicEvents.automatic_event_download);
+                                for (var i = 0; i < pixels.length; i++) {
+                                    var event = Utils.clone(options.dynamicEvents.automatic_event_download[pixels[i]]);
+                                    var extensions = event.extensions;
+                                    if (extensions.includes(extension)) {
+
+                                        if(pixels[i] == "tiktok") {
+                                            getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                                        } else {
+                                            if (options.enable_remove_download_url_param) {
+                                                href = href.split('?')[0];
+                                            }
+                                            event.params.download_url = href;
+                                            event.params.download_type = extension;
+                                            event.params.download_name = Utils.getLinkFilename(href);
+                                            getPixelBySlag(pixels[i]).onDownloadEvent(event);
+                                        }
+
+                                        isFired = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if(isFired) { // prevent duplicate events on the same element
+                        return;
+                    }
+                }
+
+
                 if (!e.hasOwnProperty('originalEvent')) {
                     return;
-                };
+                }
+                if($elem.hasClass("add_to_cart_button") ||
+                    $elem.hasClass("single_add_to_cart_button") ) { // add_to_cart_button fire in woo
+                    return;
+                }
 
-                var $elem = $(this),
-                    params = {},
-                    ga_action = 'Button',
-                    gads_action = 'Button',
-                    bing_action = 'Button';
+                if(options.dynamicEvents.hasOwnProperty("wcf_add_to_cart_on_next_step_click")
+                    && $elem.hasClass("wcf-next-step-link")) {
+                    return;// add_to_cart_button fire in woo cf
+                }
+                if(options.dynamicEvents.hasOwnProperty("wcf_add_to_cart_on_bump_click")
+                    && $elem.hasClass("wcf-bump-order-cb")) {
+                    return;// add_to_cart_button fire in woo cf
+                }
+
+                if($elem.hasClass("remove_from_cart_button") ) { // cancel remove from cart
+                    return;
+                }
+                if($elem.hasClass("remove") ) { // cancel remove from cart
+                    if($elem.parents('.cart_item').length || $elem.parents('.mini_cart_item').length)
+                    return;
+                }
+                if($elem.attr("name") == "update_cart" || $elem.attr("name") == "apply_coupon") { // cancel update  cart or coupon button
+                    return;
+                }
 
 
                 if ($elem.hasClass('pys_block')) {
                     return; // avoiding fake double clicks from Affiliate event
                 }
+                var text = "";
+                var target_url = "";
+                var linkType = "Internal Click";
 
                 if ($elem.is('a')) {
-
                     var href = $elem.attr('href');
 
                     // fixes #112
                     if (typeof href !== "string") {
                         return;
                     }
-
                     href = href.trim();
 
-                    if($elem.hasClass("add_to_cart_button")) { // add_to_cart_button send params like button. Maybe need a global solution
-                        params.link_type = 'Button';
-                        params.tag_text = $elem.text();
-
-                        ga_action = $elem.text();
-                        gads_action = $elem.text();
-                        bing_action = $elem.text();
-                    } else if (href.startsWith('tel:')) {// privacy issue
-
-                        params.link_type = 'Tel';
-                        params.tag_text = '(phone number hidden)';
-
-                        ga_action = '(phone number hidden)';
-                        gads_action = '(phone number hidden)';
-                        bing_action = '(phone number hidden)';
-
-                    } else if (href.startsWith('mailto:')) {
-
-                        params.link_type = 'Email';
-                        params.tag_text = '(email address hidden)';
-
-                        ga_action = '(email address hidden)';
-                        gads_action = '(email address hidden)';
-                        bing_action = '(email address hidden)';
-
-                    } else if (href.startsWith('http')) {
-
-                        // link type
-                        var host = $elem.context != undefined ? $elem.context.host : $elem[0].host;
-
-                        if (document.location.host == host) {
-                            params.link_type = 'Internal Link';
-                        } else {
-                            params.link_type = 'Outbound Link';
-                        };
-
-                        params.tag_text = $elem.text();
-                        ga_action = href;
-                        gads_action = href;
-                        bing_action = href;
-
-                        params.URL = href;
-
+                    text = $elem.text();
+                    if(options.enable_remove_target_url_param) {
+                        target_url = href.split('?')[0];
+                    } else {
+                        target_url = href
                     }
 
 
+                    //Email Event
+                    if (href.startsWith('mailto:')) {
+                        if(options.dynamicEvents.hasOwnProperty("automatic_event_email_link")) {
+                            var pixels = Object.keys(options.dynamicEvents.automatic_event_email_link);
+                            for(var i = 0;i<pixels.length;i++) {
+                                var event = Utils.clone(options.dynamicEvents.automatic_event_email_link[pixels[i]]);
+                                if ( pixels[i] !== 'tiktok') {
+                                    Utils.copyProperties(Utils.getRequestParams(), event.params);
+                                }
+                                getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                            }
+                        }
+
+                        return; // not fire next
+                    }
+
+                    // Phone
+                    if (href.startsWith('tel:')) {
+                        if(options.dynamicEvents.hasOwnProperty("automatic_event_tel_link")) {
+                            var pixels = Object.keys(options.dynamicEvents.automatic_event_tel_link);
+                            for(var i = 0;i<pixels.length;i++) {
+                                var event = Utils.clone(options.dynamicEvents.automatic_event_tel_link[pixels[i]]);
+                                if ( pixels[i] !== 'tiktok') {
+                                    Utils.copyProperties(Utils.getRequestParams(), event.params);
+                                }
+                                getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                            }
+                        }
+                        return; // not fire next
+                    }
+
+                    if (href.startsWith('http')) {
+                        // link type
+                        var host = $elem.context != undefined ? $elem.context.host : $elem[0].host;
+                        if (document.location.host != host) {
+                            linkType = 'External Click';
+                        }
+                    }
                 } else if ($elem.is('button')) {
-                    params.link_type = 'Button';
-                    params.tag_text = $elem.text();
-
-                    ga_action = $elem.text(),
-                        gads_action = $elem.text(),
-                        bing_action = $elem.text();
+                    if( $elem.hasClass("forminator-button-submit")) {
+                        //disable duplicate events
+                        return;
+                    }
+                    text = $elem.text();
                 } else if ($elem.is('input[type="button"]')) {
-                    params.link_type = 'input.button';
-                    params.tag_text = $elem.val();
-
-                    ga_action = $elem.val(),
-                        gads_action = $elem.val(),
-                        bing_action = $elem.val();
+                    text = $elem.val();
                 } else if ($elem.is('input[type="submit"]')) {
-                    params.link_type = 'input.submit';
-                    params.tag_text = $elem.val();
-
-                    ga_action = $elem.val(),
-                        gads_action = $elem.val(),
-                        bing_action = $elem.val();
+                    if ( $elem.parents("form.comment-form")) {
+                        //disable duplicate events
+                        return;
+                    }
+                    if ($elem.parents("form")) {
+                        //disable duplicate events
+                        return;
+                    }
+                    text = $elem.val();
                 } else {
                     return;
                 }
 
-                params.tag_text = Utils.filterEmails(params.tag_text);
 
-                Facebook.onClickEvent(params);
-                Analytics.onClickEvent(ga_action, params);
-                GAds.onClickEvent(gads_action, params);
-                Pinterest.onClickEvent(params);
-                Bing.onClickEvent(bing_action, params);
+
+                text = Utils.filterEmails(text);
+
+
+                if( linkType === "Internal Click"
+                    && options.dynamicEvents.hasOwnProperty("automatic_event_internal_link")
+                ) {
+                    var pixels = Object.keys(options.dynamicEvents.automatic_event_internal_link);
+
+                    for(var i = 0;i<pixels.length;i++) {
+                        var event = Utils.clone(options.dynamicEvents.automatic_event_internal_link[pixels[i]]);
+
+                        if(pixels[i] !== "tiktok") { // TT doesn't support custom parameters
+                            event.params["text"] = text;
+                            if(target_url){
+                                event.params["target_url"] = target_url;
+                            }
+                            Utils.copyProperties(Utils.getRequestParams(), event.params);
+                        }
+
+
+                        getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                    }
+                }
+
+                if( linkType === "External Click"
+                    && options.dynamicEvents.hasOwnProperty("automatic_event_outbound_link")
+                ) {
+                    var pixels = Object.keys(options.dynamicEvents.automatic_event_outbound_link);
+
+                    for(var i = 0;i<pixels.length;i++) {
+                        var event = Utils.clone(options.dynamicEvents.automatic_event_outbound_link[pixels[i]]);
+
+                        if(pixels[i] !== "tiktok") { // TT doesn't support custom parameters
+                            event.params["text"] = text;
+                            if(target_url){
+                                event.params["target_url"] = target_url;
+                            }
+                            Utils.copyProperties(Utils.getRequestParams(), event.params);
+                        }
+
+
+                        getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                    }
+                }
+
+
+
 
             });
 
         }
 
         // setup AdSense Event
-        if (options.adSenseEventEnabled) {
+        if (options.dynamicEvents.hasOwnProperty("automatic_event_adsense")) {
+
+            var isOverGoogleAd = false;
+
+            $(document)
+                .on('mouseover', 'ins iframe', function () { //class adsbygoogle adsbygoogle-noablate ??
+                    isOverGoogleAd = true;
+                })
+                .on('mouseout', 'iframe', function () {
+                    isOverGoogleAd = false;
+                });
+
+            $(window)
+                .on( "blur",function () {
+                    if (isOverGoogleAd) {
+                        console.log('automatic_event_adsense')
+                        if(options.dynamicEvents.hasOwnProperty("automatic_event_adsense")) {
+                            var pixels = Object.keys(options.dynamicEvents.automatic_event_adsense);
+                            for (var i = 0; i < pixels.length; i++) {
+                                var event = Utils.clone(options.dynamicEvents.automatic_event_adsense[pixels[i]]);
+                                if ( pixels[i] !== 'tiktok') {
+                                    Utils.copyProperties(Utils.getRequestParams(), event.params);
+                                }
+                                getPixelBySlag(pixels[i]).onAdSenseEvent(event);
+                            }
+                        }
+
+                        $.each(options.triggerEventTypes, function (triggerType, events) {
+                            $.each(events, function (eventId, triggers) {
+                                switch (triggerType) {
+                                    case 'ad_sense_click':
+                                        Utils.fireTriggerEvent(eventId);
+                                        break;
+                                }
+                            });
+                        });
+                    }
+                })
+                .trigger("focus");
+
+        }
+
+        //setup adsense for custom events
+        var dynamicAdsenseEventsTriggers = 0
+        $.each(options.triggerEventTypes, function (triggerType, events) {
+            if(triggerType == "ad_sense_click") {
+                dynamicAdsenseEventsTriggers++;
+            }
+        });
+        if (dynamicAdsenseEventsTriggers > 0) {
 
             var isOverGoogleAd = false;
 
@@ -2782,22 +4426,75 @@ if (!String.prototype.trim) {
             $(window)
                 .on( "blur",function () {
                     if (isOverGoogleAd) {
-                        Facebook.onAdSenseEvent();
-                        Analytics.onAdSenseEvent();
-                        GAds.onAdSenseEvent();
-                        Pinterest.onAdSenseEvent();
-                        Bing.onAdSenseEvent();
+
+                        $.each(options.triggerEventTypes, function (triggerType, events) {
+                            $.each(events, function (eventId, triggers) {
+                                switch (triggerType) {
+                                    case 'ad_sense_click':
+                                        Utils.fireTriggerEvent(eventId);
+                                        break;
+                                }
+                            });
+                        });
                     }
                 })
                 .trigger("focus");
 
         }
 
+
+        // page scroll event
+        if (options.dynamicEvents.hasOwnProperty("automatic_event_scroll")
+        ) {
+
+            var singlePageScroll = function () {
+
+
+                var docHeight = $(document).height() - $(window).height();
+                var isFired = false;
+
+                if (options.dynamicEvents.hasOwnProperty("automatic_event_scroll")) {
+                    var pixels = Object.keys(options.dynamicEvents.automatic_event_scroll);
+                    for(var i = 0;i<pixels.length;i++) {
+                        var event = Utils.clone(options.dynamicEvents.automatic_event_scroll[pixels[i]]);
+                        var scroll = Math.round(docHeight * event.scroll_percent / 100)// convert % to absolute positions
+
+                        if(scroll < $(window).scrollTop()) {
+                            if ( pixels[i] !== 'tiktok') {
+                                Utils.copyProperties(Utils.getRequestParams(), event.params);
+                            }
+                            getPixelBySlag(pixels[i]).onPageScroll(event);
+                            isFired = true
+                        }
+                    }
+                }
+                if(isFired) {
+                    $(document).off("scroll",singlePageScroll);
+                }
+            }
+            $(document).on("scroll",singlePageScroll);
+        }
+
+
+        if (options.dynamicEvents.hasOwnProperty("automatic_event_time_on_page")) {
+            var pixels = Object.keys(options.dynamicEvents.automatic_event_time_on_page);
+            var time = options.dynamicEvents.automatic_event_time_on_page[pixels[0]].time_on_page; // the same for all pixel
+            setTimeout(function(){
+                for(var i = 0;i<pixels.length;i++) {
+                    var event = Utils.clone(options.dynamicEvents.automatic_event_time_on_page[pixels[i]]);
+                    if ( pixels[i] !== 'tiktok') {
+                        Utils.copyProperties(Utils.getRequestParams(), event.params);
+                    }
+                    getPixelBySlag(pixels[i]).onTime(event);
+                }
+            },time*1000);
+        }
+
         // setup Dynamic events
-        $.each(options.dynamicEventsTriggers, function (triggerType, events) {
+
+        $.each(options.triggerEventTypes, function (triggerType, events) {
 
             $.each(events, function (eventId, triggers) {
-
                 switch (triggerType) {
                     case 'url_click':
                         //@see: Utils.setupURLClickEvents()
@@ -2826,52 +4523,116 @@ if (!String.prototype.trim) {
         // setup WooCommerce events
         if (options.woo.enabled) {
 
+            // Woo CartFlow AddToCart
+            if (options.dynamicEvents.hasOwnProperty("wcf_add_to_cart_on_next_step_click")) {
+                $("body").on("click",'.wcf-next-step-link',function () {
+                    var pixels = Object.keys(options.dynamicEvents.wcf_add_to_cart_on_next_step_click);
+                    for(var i = 0;i<pixels.length;i++) {
+                        var event = Utils.clone(options.dynamicEvents.wcf_add_to_cart_on_next_step_click[pixels[i]])
+                        getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                    }
+                });
+            }
+            // Woo CartFlow Bump AddToCart
+            if(options.dynamicEvents.hasOwnProperty("wcf_add_to_cart_on_bump_click") ||
+                options.dynamicEvents.hasOwnProperty("wcf_bump")) {
+                $("body").on('change','.wcf-bump-order-cb',function () {
+
+                    if(this.checked) {
+                        if(options.dynamicEvents.hasOwnProperty("wcf_add_to_cart_on_bump_click")) {
+                            var pixels = Object.keys(options.dynamicEvents.wcf_add_to_cart_on_bump_click);
+                            for(var i = 0;i<pixels.length;i++) {
+                                var event = Utils.clone(options.dynamicEvents.wcf_add_to_cart_on_bump_click[pixels[i]]);
+                                getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                            }
+                        }
+
+
+                        if(options.dynamicEvents.hasOwnProperty("wcf_bump")) {
+                            var pixels = Object.keys(options.dynamicEvents.wcf_bump);
+                            for(var i = 0;i<pixels.length;i++) {
+                                var event = Utils.clone(options.dynamicEvents.wcf_bump[pixels[i]]);
+                                getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                            }
+                        }
+
+                    } else {
+                        if(options.dynamicEvents.hasOwnProperty("wcf_remove_from_cart_on_bump_click")) {
+                            var pixels = Object.keys(options.dynamicEvents.wcf_remove_from_cart_on_bump_click);
+                            for(var i = 0;i<pixels.length;i++) {
+                                var event = Utils.clone(options.dynamicEvents.wcf_remove_from_cart_on_bump_click[pixels[i]]);
+                                getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                            }
+                        }
+
+                    }
+
+
+                });
+            }
+
+
             // WooCommerce AddToCart
-            if (options.woo.addToCartOnButtonEnabled) {
+            if (options.dynamicEvents.hasOwnProperty("woo_add_to_cart_on_button_click")
+                && options.woo.hasOwnProperty("addToCartCatchMethod")
+                && options.woo.addToCartCatchMethod === "add_cart_js"
+            ) {
 
                 // Loop, any kind of "simple" product, except external
-                $('.add_to_cart_button:not(.product_type_variable)').on("click",function (e) {
-
+                $('.add_to_cart_button:not(.product_type_variable,.product_type_bundle,.single_add_to_cart_button)').on("click",function (e) {
+                    var $button = $(this);
+                    var $prod_info = $button.siblings('.pys_list_name_productdata').data();
+                    var product_id = $(this).data('product_id');
+                    Cookies.set('productlist', $prod_info, { expires: 1 })
                     var product_id = $(this).data('product_id');
 
                     if (typeof product_id !== 'undefined') {
-                        Facebook.onWooAddToCartOnButtonEvent(product_id);
-                        Analytics.onWooAddToCartOnButtonEvent(product_id);
+                        Facebook.onWooAddToCartOnButtonEvent(product_id,$(this));
+                        Analytics.onWooAddToCartOnButtonEvent(product_id, $prod_info);
                         GAds.onWooAddToCartOnButtonEvent(product_id);
                         Pinterest.onWooAddToCartOnButtonEvent(product_id);
                         Bing.onWooAddToCartOnButtonEvent(product_id);
+                        TikTok.onWooAddToCartOnButtonEvent(product_id);
                     }
 
                 });
 
                 // Single Product
-                $('body').on('click','.single_add_to_cart_button',function (e) {
+                // tap try to https://stackoverflow.com/questions/30990967/on-tap-click-event-firing-twice-how-to-avoid-it
+                //  $(document) not work
+                $('body').onFirst('click','button.single_add_to_cart_button,.single_add_to_cart_button',function (e) {
 
                     var $button = $(this);
-
+                    var $prod_info = $button.siblings('.pys_list_name_productdata').data();
+                    var product_id = $(this).data('product_id');
+                    Cookies.set('productlist', $prod_info, { expires: 1 })
                     if ($button.hasClass('disabled')) {
                         return;
                     }
 
                     var $form = $button.closest('form');
 
-                    var product_type = PRODUCT_SIMPLE;
+                    var product_type = Utils.PRODUCT_SIMPLE;
                     var is_external = false;
 
                     if ($form.length === 0) {
                         is_external = true;
                     } else if ($form.hasClass('variations_form')) {
-                        product_type = PRODUCT_VARIABLE;
+                        product_type = Utils.PRODUCT_VARIABLE;
                     } else if($form.hasClass('bundle_form')) {
-                        product_type = PRODUCT_BUNDLE;
+                        product_type = Utils.PRODUCT_BUNDLE;
+                    } else if($form.hasClass('grouped_form')) {
+                        product_type = Utils.PRODUCT_GROUPED;
                     }
 
 
 
                     var product_id;
                     var qty;
-
-                    if (product_type === PRODUCT_VARIABLE) {
+                    if (product_type === Utils.PRODUCT_GROUPED) {
+                        qty = 1;
+                        product_id = parseInt($form.find('*[name="add-to-cart"]').val());
+                    } else if (product_type === Utils.PRODUCT_VARIABLE) {
                         product_id = parseInt($form.find('*[name="add-to-cart"]').val());
                         var qtyTag = $form.find('input[name="quantity"]');
                         if(qtyTag.length <= 0) {
@@ -2895,13 +4656,30 @@ if (!String.prototype.trim) {
                     GAds.onWooAddToCartOnSingleEvent(product_id, qty, product_type, is_external, $form);
                     Pinterest.onWooAddToCartOnSingleEvent(product_id, qty, product_type, is_external, $form);
                     Bing.onWooAddToCartOnSingleEvent(product_id, qty, product_type, is_external, $form);
-
+                    TikTok.onWooAddToCartOnSingleEvent(product_id, qty, product_type, is_external, $form);
                 });
 
+            } else {
+                $('.add_to_cart_button:not(.product_type_variable,.product_type_bundle,.single_add_to_cart_button)').on("click",function (e) {
+                    var $button = $(this);
+                    var $prod_info = $button.siblings('.pys_list_name_productdata').data();
+                    var product_id = $(this).data('product_id');
+                    Cookies.set('productlist', $prod_info, { expires: 1 })
+                });
+
+                // Single Product
+                // tap try to https://stackoverflow.com/questions/30990967/on-tap-click-event-firing-twice-how-to-avoid-it
+                //  $(document) not work
+                $('body').onFirst('click','button.single_add_to_cart_button,.single_add_to_cart_button',function (e) {
+
+                    var $button = $(this);
+                    var $prod_info = $button.siblings('.pys_list_name_productdata').data();
+                    Cookies.set('productlist', $prod_info, { expires: 1 })
+                });
             }
 
             // WooCommerce Affiliate
-            if (options.woo.affiliateEnabled) {
+            if (options.dynamicEvents.hasOwnProperty("woo_affiliate")) {
 
                 // Loop, external
                 $('.product_type_external').on("click",function (e) {
@@ -2921,7 +4699,7 @@ if (!String.prototype.trim) {
             }
 
             // WooCommerce RemoveFromCart
-            if (options.woo.removeFromCartEnabled) {
+            if (options.dynamicEvents.hasOwnProperty("woo_remove_from_cart")) {
 
                 $('body').on('click', options.woo.removeFromCartSelector, function (e) {
 
@@ -2935,14 +4713,10 @@ if (!String.prototype.trim) {
                     if (results !== null) {
 
                         var item_hash = results[1];
-                        window.pysWooRemoveFromCartData = window.pysWooRemoveFromCartData || [];
 
-                        if (window.pysWooRemoveFromCartData.hasOwnProperty(item_hash)) {
-                            Facebook.onWooRemoveFromCartEvent(item_hash);
-                            Analytics.onWooRemoveFromCartEvent(item_hash);
-                            GAds.onWooRemoveFromCartEvent(item_hash);
-                            Pinterest.onWooRemoveFromCartEvent(item_hash);
-                            Bing.onWooRemoveFromCartEvent(item_hash);
+                        if (options.dynamicEvents["woo_remove_from_cart"].hasOwnProperty(item_hash)) {
+                            var events = options.dynamicEvents["woo_remove_from_cart"][item_hash];
+                            Utils.fireEventForAllPixel("onWooRemoveFromCartEvent",events)
                         }
 
                     }
@@ -2952,7 +4726,7 @@ if (!String.prototype.trim) {
             }
 
             // WooCommerce PayPal
-            if (options.woo.payPalEnabled) {
+            if (options.dynamicEvents.hasOwnProperty("woo_paypal")) {
 
                 // Non-default binding used to avoid situations when some code in external js
                 // stopping events propagation, eg. returns false, and our handler will never called
@@ -2963,53 +4737,65 @@ if (!String.prototype.trim) {
                     if (method !== 'paypal') {
                         return;
                     }
-
-                    Facebook.onWooPayPalEvent();
-                    Analytics.onWooPayPalEvent();
-                    GAds.onWooPayPalEvent();
-                    Pinterest.onWooPayPalEvent();
-                    Bing.onWooPayPalEvent();
+                    var events = options.dynamicEvents.woo_paypal;
+                    Utils.fireEventForAllPixel("onWooPayPalEvent",events)
 
                 });
 
             }
 
             // WooCommerce checkout progress
-            if (options.woo.checkoutProgressEnabled) {
+            if(options.dynamicEvents.hasOwnProperty("woo_initiate_checkout_progress_f") ) {
 
-                if(window.pysWooCheckoutProgress.hasOwnProperty("first_name")) {
+                $(document).on("change",".woocommerce-validated #billing_first_name",function () {
+                    Analytics.onWooCheckoutProgressStep(options.dynamicEvents.woo_initiate_checkout_progress_f[Analytics.tag()]);
+                });
+            }
+            if(options.dynamicEvents.hasOwnProperty("woo_initiate_checkout_progress_l")) {
 
-                    $(document).on("change",".woocommerce-validated #billing_first_name",function () {
-                        Analytics.onWooCheckoutProgressStep("first_name");
-                    });
-                }
-                if(window.pysWooCheckoutProgress.hasOwnProperty("last_name")) {
+                $(document).on("change",".woocommerce-validated #billing_last_name",function () {
+                    Analytics.onWooCheckoutProgressStep(options.dynamicEvents.woo_initiate_checkout_progress_l[Analytics.tag()]);
+                });
+            }
 
-                    $(document).on("change",".woocommerce-validated #billing_last_name",function () {
-                        Analytics.onWooCheckoutProgressStep("last_name");
-                    });
-                }
+            if(options.dynamicEvents.hasOwnProperty("woo_initiate_checkout_progress_e")) {
 
-                if(window.pysWooCheckoutProgress.hasOwnProperty("email")) {
-
-                    $(document).on("change",".woocommerce-validated #billing_email",function () {
-                        Analytics.onWooCheckoutProgressStep("email");
-                    });
-                }
-                if(window.pysWooCheckoutProgress.hasOwnProperty("place_order")) {
-                    $(document).onFirst('submit click', '#place_order', function () {
-                        Analytics.onWooCheckoutProgressStep("place_order");
-                    });
-                }
+                $(document).on("change",".woocommerce-validated #billing_email",function () {
+                    Analytics.onWooCheckoutProgressStep(options.dynamicEvents.woo_initiate_checkout_progress_e[Analytics.tag()]);
+                });
+            }
+            if(options.dynamicEvents.hasOwnProperty("woo_initiate_checkout_progress_o")) {
+                $(document).onFirst('submit click', '#place_order', function () {
+                    Analytics.onWooCheckoutProgressStep(options.dynamicEvents.woo_initiate_checkout_progress_o[Analytics.tag()]);
+                });
             }
 
 
             // WooCommerce
-            if(options.woo.selectContentEnabled) {
+            if(options.dynamicEvents.hasOwnProperty("woo_select_content_search") ||
+                options.dynamicEvents.hasOwnProperty("woo_select_content_shop") ||
+                options.dynamicEvents.hasOwnProperty("woo_select_content_tag") ||
+                options.dynamicEvents.hasOwnProperty("woo_select_content_single") ||
+                options.dynamicEvents.hasOwnProperty("woo_select_content_category")
+            ) {
                 $('.product.type-product a.woocommerce-loop-product__link').onFirst('click', function (evt) {
                     var productId = $(this).parent().find("a.add_to_cart_button").attr("data-product_id");
-                    var param = window.pysWooSelectContentData[productId];
-                    Analytics.onWooSelectContent(param);
+                    if(options.dynamicEvents.hasOwnProperty("woo_select_content_search") &&
+                        options.dynamicEvents.woo_select_content_search.hasOwnProperty(productId)) {
+                        Analytics.onWooSelectContent(options.dynamicEvents.woo_select_content_search[productId][Analytics.tag()]);
+                    } else if(options.dynamicEvents.hasOwnProperty("woo_select_content_shop") &&
+                        options.dynamicEvents.woo_select_content_shop.hasOwnProperty(productId)) {
+                        Analytics.onWooSelectContent(options.dynamicEvents.woo_select_content_shop[productId][Analytics.tag()]);
+                    } else if(options.dynamicEvents.hasOwnProperty("woo_select_content_tag") &&
+                        options.dynamicEvents.woo_select_content_tag.hasOwnProperty(productId)) {
+                        Analytics.onWooSelectContent(options.dynamicEvents.woo_select_content_tag[productId][Analytics.tag()]);
+                    } else if(options.dynamicEvents.hasOwnProperty("woo_select_content_single") &&
+                        options.dynamicEvents.woo_select_content_single.hasOwnProperty(productId)) {
+                        Analytics.onWooSelectContent(options.dynamicEvents.woo_select_content_single[productId][Analytics.tag()]);
+                    } else if(options.dynamicEvents.hasOwnProperty("woo_select_content_category") &&
+                        options.dynamicEvents.woo_select_content_category.hasOwnProperty(productId)) {
+                        Analytics.onWooSelectContent(options.dynamicEvents.woo_select_content_category[productId][Analytics.tag()]);
+                    }
                 });
             }
         }
@@ -3018,7 +4804,7 @@ if (!String.prototype.trim) {
         if (options.edd.enabled) {
 
             // EDD AddToCart
-            if (options.edd.addToCartOnButtonEnabled) {
+            if (options.dynamicEvents.hasOwnProperty("edd_add_to_cart_on_button_click")) {
 
                 $('form.edd_download_purchase_form .edd-add-to-cart').on("click",function (e) {
 
@@ -3078,8 +4864,6 @@ if (!String.prototype.trim) {
                         } else {
                             quantities.push(1);
                         }
-
-
                     }
 
                     // fire event for each download/variant
@@ -3099,6 +4883,7 @@ if (!String.prototype.trim) {
                         GAds.onEddAddToCartOnButtonEvent(download_id, price_index, q);
                         Pinterest.onEddAddToCartOnButtonEvent(download_id, price_index, q);
                         Bing.onEddAddToCartOnButtonEvent(download_id, price_index, q);
+                        TikTok.onEddAddToCartOnButtonEvent(download_id, price_index, q);
 
                     });
 
@@ -3107,25 +4892,16 @@ if (!String.prototype.trim) {
             }
 
             // EDD RemoveFromCart
-            if (options.edd.removeFromCartEnabled) {
+            if (options.dynamicEvents.hasOwnProperty("edd_remove_from_cart") ) {
 
                 $('form#edd_checkout_cart_form .edd_cart_remove_item_btn').on("click",function (e) {
 
                     var href = $(this).attr('href');
                     var key = href.substring(href.indexOf('=') + 1).charAt(0);
 
-                    window.pysEddRemoveFromCartData = window.pysEddRemoveFromCartData || [];
-
-                    if (window.pysEddRemoveFromCartData[key]) {
-
-                        var item = window.pysEddRemoveFromCartData[key];
-
-                        Facebook.onEddRemoveFromCartEvent(item);
-                        Analytics.onEddRemoveFromCartEvent(item);
-                        GAds.onEddRemoveFromCartEvent(item);
-                        Pinterest.onEddRemoveFromCartEvent(item);
-                        Bing.onEddRemoveFromCartEvent(item);
-
+                    if (options.dynamicEvents.edd_remove_from_cart.hasOwnProperty(key)) {
+                        var events = options.dynamicEvents.edd_remove_from_cart[key];
+                        Utils.fireEventForAllPixel("onEddRemoveFromCartEvent",events)
                     }
 
                 });
@@ -3137,22 +4913,26 @@ if (!String.prototype.trim) {
         Utils.setupURLClickEvents();
 
         // setup Comment Event
-        if (options.commentEventEnabled) {
+        if (options.dynamicEvents.hasOwnProperty("automatic_event_comment")
+        ) {
 
             $('form.comment-form').on("submit",function () {
-
-                Facebook.onCommentEvent();
-                Analytics.onCommentEvent();
-                GAds.onCommentEvent();
-                Pinterest.onCommentEvent();
-                Bing.onCommentEvent();
-
+                if (options.dynamicEvents.hasOwnProperty("automatic_event_comment")) {
+                    var pixels = Object.keys(options.dynamicEvents.automatic_event_comment);
+                    for (var i = 0; i < pixels.length; i++) {
+                        var event = Utils.clone(options.dynamicEvents.automatic_event_comment[pixels[i]]);
+                        if ( pixels[i] !== 'tiktok') {
+                            Utils.copyProperties(Utils.getRequestParams(), event.params);
+                        }
+                        getPixelBySlag(pixels[i]).onCommentEvent(event);
+                    }
+                }
             });
 
         }
 
         // setup Form Event
-        if (options.formEventEnabled) {
+        if ( options.dynamicEvents.hasOwnProperty("automatic_event_form")) {
 
             $(document).onFirst('submit', 'form', function (e) {
 
@@ -3173,105 +4953,388 @@ if (!String.prototype.trim) {
                 if ($form.hasClass('edd_form') || $form.hasClass('edd_download_purchase_form')) {
                     return;
                 }
-
-                var params = {
-                    form_id: $form.attr('id'),
-                    form_class: $form.attr('class'),
-                    form_submit_label: $form.find('[type="submit"]').is('input') ?
-                        $form.find('[type="submit"]').val() : $form.find('[type="submit"]').text()
-                };
-
-                Facebook.onFormEvent(params);
-                Analytics.onFormEvent(params);
-                GAds.onFormEvent(params);
-                Pinterest.onFormEvent(params);
-                Bing.onFormEvent(params);
-
-            });
-
-            // Ninja Forms
-            $(document).onFirst('nfFormSubmitResponse', function (e, data) {
-
-                var params = {
-                    form_id: data.response.data.form_id,
-                    form_title: data.response.data.settings.title
-                };
-
-                Facebook.onFormEvent(params);
-                Analytics.onFormEvent(params);
-                GAds.onFormEvent(params);
-                Pinterest.onFormEvent(params);
-                Bing.onFormEvent(params);
-
-            });
-
-        }
-
-        // setup DownloadDocs event
-        if (options.downloadEventEnabled && options.downloadExtensions.length > 0) {
-
-            $('body').on("click",function (event) {
-
-                var el = event.srcElement || event.target;
-
-                /* Loop up the DOM tree through parent elements if clicked element is not a link (eg: an image inside a link) */
-                while (el && (typeof el.tagName === 'undefined' || el.tagName.toLowerCase() !== 'a' || !el.href)) {
-                    el = el.parentNode;
+                // exclude CF7 forms
+                if ($form.hasClass('wpcf7-form')) {
+                    return;
                 }
+                // exclude Gravity forms
+                if ($form.attr('id') && $form.attr('id').includes('gform')) {
+                    var target = $form.attr('target');
+                    if (target && target.indexOf('gform_ajax_frame') !== -1) {
+                        return;
+                    }
+                }
+                // exclude Forminator forms
+                if ($form.hasClass('forminator-custom-form') || $form.hasClass('forminator_ajax')) {
+                    return;
+                }
+                // exclude WPforms forms
+                if ($form.hasClass('wpforms-form') || $form.hasClass('wpforms-ajax-form')) {
+                    return;
+                }
+                // exclude Formidable forms
+                /*if ($form.hasClass('frm-show-form')) {
+                    return;
+                }*/
+                // exclude Ninja Forms forms
+                if ($form.parent().hasClass('nf-form-layout')) {
+                    return;
+                }
+                // exclude Fluent forms
+                if ($form.hasClass('frm-fluent-form')) {
+                    return;
+                }
+                if(!options.enable_success_send_form) {
+                    var params = {
+                        form_id: $form.attr('id'),
+                        form_class: $form.attr('class') ? $form.attr('class') : $form.attr('id'),
+                        text: $form.find('[type="submit"]').is('input') ?
+                            $form.find('[type="submit"]').val() : $form.find('[type="submit"]').text()
+                    };
 
-                if (el && el.href) {
+                    if (options.dynamicEvents.hasOwnProperty("automatic_event_form")) {
+                        var pixels = Object.keys(options.dynamicEvents.automatic_event_form);
+                        for (var i = 0; i < pixels.length; i++) {
+                            var event = Utils.clone(options.dynamicEvents.automatic_event_form[pixels[i]]);
 
-                    var extension = Utils.getLinkExtension(el.href);
-                    var track_download = false;
-
-                    if (extension.length > 0) {
-
-                        for (i = 0, len = options.downloadExtensions.length; i < len; ++i) {
-                            if (options.downloadExtensions[i] === extension) {
-                                track_download = true;
-                                break;
+                            if (pixels[i] === "tiktok") {
+                                getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                            } else {
+                                Utils.copyProperties(params, event.params,)
+                                Utils.copyProperties(Utils.getRequestParams(), event.params);
+                                getPixelBySlag(pixels[i]).onFormEvent(event);
                             }
                         }
-
                     }
-
-                    if (track_download) {
-
-                        var params = {
-                            download_url: el.href,
-                            download_type: extension,
-                            download_name: Utils.getLinkFilename(el.href)
-                        };
-
-                        Facebook.onDownloadEvent(params);
-                        Analytics.onDownloadEvent(params);
-                        GAds.onDownloadEvent(params);
-                        Pinterest.onDownloadEvent(params);
-                        Bing.onDownloadEvent(params);
-
-                    }
-
                 }
-
             });
+
 
         }
 
+        jQuery(document).on('elementor/popup/show', function(event) {
+            for (var i = 0; i < jQuery(".wpcf7-form").length; i++) {
+                wpcf7.init(jQuery(".wpcf7-form")[i]);
+            }
+        });
+        document.addEventListener( 'wpcf7mailsent', function( event ) {
+            var form_id = event.detail.contactFormId;
+            var sendEventId = null;
+            var disabled_form_action = false;
+            if(options.triggerEventTypes.hasOwnProperty('CF7'))
+            {
+                key_event = Object.keys(options.triggerEventTypes.CF7)[0];
+                if(options.triggerEventTypes.CF7[key_event].hasOwnProperty('disabled_form_action'))
+                {
+                    disabled_form_action = options.triggerEventTypes.CF7[key_event].disabled_form_action;
+                }
+                $.each(options.triggerEventTypes.CF7, function (eventId, triggers) {
+                    $.each(triggers.forms, function (index, value) {
+                        if(value == form_id) {
+                            sendEventId=eventId;
+                        };
+                    });
+                });
+            }
+            if(sendEventId != null)
+            {
+                Utils.fireTriggerEvent(sendEventId);
+
+                if(!disabled_form_action)
+                {
+                    sendFormAction($(event.target), form_id);
+                }
+            }
+            else {
+                sendFormAction($(event.target), form_id);
+            }
+        }, false );
+
+
+        //GravityForm
+        jQuery(document).on('gform_confirmation_loaded', function(event, formId){
+            var form_id = formId;
+            var sendEventId = null;
+            var disabled_form_action = false;
+            if(options.triggerEventTypes.hasOwnProperty('gravity'))
+            {
+                key_event = Object.keys(options.triggerEventTypes.gravity)[0];
+                if(options.triggerEventTypes.gravity[key_event].hasOwnProperty('disabled_form_action'))
+                {
+                    disabled_form_action = options.triggerEventTypes.gravity[key_event].disabled_form_action;
+                }
+                $.each(options.triggerEventTypes.gravity, function (eventId, triggers) {
+                    $.each(triggers.forms, function (index, value) {
+                        if(value == form_id) {
+                            sendEventId=eventId;
+                        };
+                    });
+                });
+            }
+            if(sendEventId != null)
+            {
+                Utils.fireTriggerEvent(sendEventId);
+
+                if(!disabled_form_action)
+                {
+                    sendFormAction($(event.target), form_id);
+                }
+            }
+            else {
+                sendFormAction($(event.target), form_id);
+            }
+            jQuery(document).off('gform_confirmation_loaded');
+        });
+        //Forminator
+        $(document).on( 'forminator:form:submit:success', function( event ){
+            var form_id = $(event.target).find('input[name="form_id"]').val();
+            var sendEventId = null;
+            var disabled_form_action = false;
+            if(options.triggerEventTypes.hasOwnProperty('forminator'))
+            {
+                key_event = Object.keys(options.triggerEventTypes.forminator)[0];
+                if(options.triggerEventTypes.forminator[key_event].hasOwnProperty('disabled_form_action'))
+                {
+                    disabled_form_action = options.triggerEventTypes.forminator[key_event].disabled_form_action;
+                }
+                $.each(options.triggerEventTypes.forminator, function (eventId, triggers) {
+                    $.each(triggers.forms, function (index, value) {
+                        if(value == form_id) {
+                            sendEventId=eventId;
+                        };
+                    });
+                });
+            }
+            if(sendEventId != null)
+            {
+                Utils.fireTriggerEvent(sendEventId);
+
+                if(!disabled_form_action)
+                {
+                    sendFormAction($(event.target), form_id);
+                }
+            }
+            else {
+                sendFormAction($(event.target), form_id);
+            }
+
+        });
+
+        //WPForm
+        $('form.wpforms-form').on('wpformsAjaxSubmitSuccess', (event) => {
+            var form_id = $(event.target).attr('data-formid');
+            var sendEventId = null;
+            var disabled_form_action = false;
+            if(options.triggerEventTypes.hasOwnProperty('wpforms'))
+            {
+                key_event = Object.keys(options.triggerEventTypes.wpforms)[0];
+                if(options.triggerEventTypes.wpforms[key_event].hasOwnProperty('disabled_form_action'))
+                {
+                    disabled_form_action = options.triggerEventTypes.wpforms[key_event].disabled_form_action;
+                }
+                $.each(options.triggerEventTypes.wpforms, function (eventId, triggers) {
+                    $.each(triggers.forms, function (index, value) {
+                        if(value == form_id) {
+                            sendEventId=eventId;
+                        };
+                    });
+                });
+            }
+            if(sendEventId != null)
+            {
+                Utils.fireTriggerEvent(sendEventId);
+
+                if(!disabled_form_action)
+                {
+                    sendFormAction($(event.target), form_id);
+                }
+            }
+            else {
+                sendFormAction($(event.target), form_id);
+            }
+        })
+        $(document).on( 'frmFormComplete', function( event, form, response ) {
+            const form_id = $(form).find('input[name="form_id"]').val();
+            var sendEventId = null;
+            var disabled_form_action = false;
+            if(options.triggerEventTypes.hasOwnProperty('formidable'))
+            {
+                key_event = Object.keys(options.triggerEventTypes.formidable)[0];
+                if(options.triggerEventTypes.formidable[key_event].hasOwnProperty('disabled_form_action'))
+                {
+                    disabled_form_action = options.triggerEventTypes.formidable[key_event].disabled_form_action;
+                }
+                $.each(options.triggerEventTypes.formidable, function (eventId, triggers) {
+                    $.each(triggers.forms, function (index, value) {
+                        if(value == form_id) {
+                            sendEventId=eventId;
+                        };
+                    });
+                });
+            }
+            if(sendEventId != null)
+            {
+                Utils.fireTriggerEvent(sendEventId);
+
+                if(!disabled_form_action)
+                {
+                    sendFormAction($(event.target), form_id);
+                }
+            }
+            else {
+                sendFormAction($(event.target), form_id);
+            }
+        });
+        // Ninja Forms
+        $(document).onFirst('nfFormSubmitResponse', function (event, data) {
+            const form_id = data.response.data.form_id;
+            var sendEventId = null;
+            var disabled_form_action = false;
+            if(options.triggerEventTypes.hasOwnProperty('ninjaform'))
+            {
+                key_event = Object.keys(options.triggerEventTypes.ninjaform)[0];
+                if(options.triggerEventTypes.ninjaform[key_event].hasOwnProperty('disabled_form_action'))
+                {
+                    disabled_form_action = options.triggerEventTypes.ninjaform[key_event].disabled_form_action;
+                }
+                $.each(options.triggerEventTypes.ninjaform, function (eventId, triggers) {
+                    $.each(triggers.forms, function (index, value) {
+                        if(value == form_id) {
+                            sendEventId=eventId;
+                        };
+                    });
+                });
+            }
+            if(sendEventId != null)
+            {
+                Utils.fireTriggerEvent(sendEventId);
+
+                if(!disabled_form_action)
+                {
+                    sendFormAction($(event.target), form_id);
+                }
+            }
+            else {
+                sendFormAction($(event.target), form_id);
+            }
+        });
+
+        var fluentForms = $('form.frm-fluent-form');
+        fluentForms.each(function() {
+            var $form = $(this);
+            $form.on('fluentform_submission_success', function(event) {
+                var $formItem = $(this);
+                var form_id = $formItem.attr('data-form_id');
+                var sendEventId = null;
+                var disabled_form_action = false;
+                if(options.triggerEventTypes.hasOwnProperty('fluentform'))
+                {
+                    key_event = Object.keys(options.triggerEventTypes.fluentform)[0];
+                    if(options.triggerEventTypes.fluentform[key_event].hasOwnProperty('disabled_form_action'))
+                    {
+                        disabled_form_action = options.triggerEventTypes.fluentform[key_event].disabled_form_action;
+                    }
+                    $.each(options.triggerEventTypes.fluentform, function (eventId, triggers) {
+                        $.each(triggers.forms, function (index, value) {
+                            if(value == form_id) {
+                                sendEventId=eventId;
+                            };
+                        });
+                    });
+                }
+                if(sendEventId != null)
+                {
+                    Utils.fireTriggerEvent(sendEventId);
+
+                    if(!disabled_form_action)
+                    {
+                        sendFormAction($(event.target), form_id);
+                    }
+                }
+                else {
+                    sendFormAction($(event.target), form_id);
+                }
+            });
+        });
         // load pixel APIs
         Utils.loadPixels();
 
+        // setup Enrich content
+        if(Utils.isCheckoutPage()) {
+            Utils.addCheckoutFields();
+        }
     });
 
-    // load WatchVideo event APIs
-    if (options.watchVideoEnabled) {
-        Utils.initYouTubeAPI();
-        Utils.initVimeoAPI();
+
+    // load WatchVideo event APIs for Auto
+    if (options.automatic.enable_video) {
+        /**
+         * Real Cookie Banner.
+         */
+        var consentApi = window.consentApi;
+        if (consentApi && options.gdpr.real_cookie_banner_integration_enabled) {
+            if (options.automatic.enable_youtube && options.enable_event_video && options.enable_automatic_events) {
+                window.consentApi.consent("http", "CONSENT", ".youtube.com").then(Utils.initYouTubeAPI);
+            }
+            if (options.automatic.enable_vimeo && options.enable_event_video && options.enable_automatic_events) {
+                window.consentApi.consent("http", "player", ".vimeo.com").then(Utils.initVimeoAPI);
+            }
+        }else{
+            if (options.automatic.enable_youtube && options.enable_event_video && options.enable_automatic_events) {
+                Utils.initYouTubeAPI();
+            }
+            if (options.automatic.enable_vimeo && options.enable_event_video && options.enable_automatic_events) {
+                Utils.initVimeoAPI();
+            }
+        }
+    }
+
+    var sendFormAction = function (form_target, formId){
+        var params = {
+                form_id: formId,
+                text: form_target.find('[type="submit"]').is('input') ? form_target.find('[type="submit"]').val() :
+                    form_target.find('.forminator-button-submit').text() != '' ? form_target.find('.forminator-button-submit').text() :
+                    form_target.find('[type="submit"]').text()
+            };
+
+            if (options.dynamicEvents.hasOwnProperty("automatic_event_form")) {
+                var pixels = Object.keys(options.dynamicEvents.automatic_event_form);
+                for (var i = 0; i < pixels.length; i++) {
+                    var event = options.dynamicEvents.automatic_event_form[pixels[i]];
+                    if (pixels[i] === "tiktok") {
+                        getPixelBySlag(pixels[i]).fireEvent(event.name, event);
+                    } else {
+                        Utils.copyProperties(params, event.params)
+                        Utils.copyProperties(Utils.getRequestParams(), event.params);
+                        getPixelBySlag(pixels[i]).onFormEvent(event);
+                    }
+                }
+            }
     }
 
 
-
 }(jQuery, pysOptions);
-
+if (pysOptions.ajaxForServerEvent && !Cookies.get('pbid')) {
+    jQuery.ajax({
+        url: pysOptions.ajaxUrl,
+        dataType: 'json',
+        data: {
+            action: 'pys_get_pbid'
+        },
+        success: function (res) {
+            if (res.data && res.data.pbid != false && pysOptions.send_external_id) {
+                var expires = parseInt(pysOptions.external_id_expire || 180);
+                Cookies.set('pbid', res.data.pbid, { expires: expires, path: '/' });
+                if(pysOptions.hasOwnProperty('facebook')) {
+                    pysOptions.facebook.advancedMatching.external_id = res.data.pbid;
+                }
+                if(pysOptions.hasOwnProperty('tiktok')){
+                    pysOptions.tiktok.advanced_matching.external_id = res.data.pbid;
+                }
+            }
+        }
+    });
+}
 function pys_generate_token(length){
     //edit the token allowed characters
     var a = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".split("");
@@ -3295,4 +5358,37 @@ function getBundlePriceOnSingleProduct(data) {
         }
     });
     return items_sum;
+}
+
+function getPixelBySlag(slug) {
+    switch (slug) {
+        case "facebook": return window.pys.Facebook;
+        case "ga": return window.pys.Analytics;
+        case "google_ads": return window.pys.GAds;
+        case "bing": return window.pys.Bing;
+        case "pinterest": return window.pys.Pinterest;
+        case "tiktok": return window.pys.TikTok;
+    }
+}
+function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+    return false;
+};
+function inArray(needle, haystack) {
+    var length = haystack.length;
+    for(var i = 0; i < length; i++) {
+        if(haystack[i] == needle) return true;
+    }
+    return false;
 }
