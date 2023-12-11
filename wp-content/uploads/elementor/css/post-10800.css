@@ -1,0 +1,74 @@
+.elementor-10800 .elementor-element.elementor-element-a96dbf7{margin-top:20px;margin-bottom:0px;}.elementor-10800 .elementor-element.elementor-element-cee886f{text-align:center;}.elementor-10800 .elementor-element.elementor-element-cee886f .elementor-heading-title{color:#000000;font-family:"Stinger", Sans-serif;font-size:35px;font-weight:100;}.elementor-10800 .elementor-element.elementor-element-50b31b0{text-align:center;color:#000000;font-family:"Aileron", Sans-serif;font-weight:100;}.elementor-10800 .elementor-element.elementor-element-648bad2{margin-top:0px;margin-bottom:30px;}/* Start Custom Fonts CSS */@font-face {
+	font-family: 'Stinger';
+	font-style: normal;
+	font-weight: 200;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-fit-light-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-fit-light-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Stinger';
+	font-style: normal;
+	font-weight: 100;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-wide-thin-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-wide-thin-webfont.woff') format('woff');
+}
+/* End Custom Fonts CSS */
+/* Start Custom Fonts CSS */@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 100;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-ultralight-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-ultralight-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 300;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-thin-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-thin-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 500;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-semibold-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-semibold-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: normal;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-regular-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-regular-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 200;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-light-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-light-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 800;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-bold-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-bold-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Aileron';
+	font-style: normal;
+	font-weight: 900;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-black-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/aileron-black-webfont.woff') format('woff');
+}
+/* End Custom Fonts CSS */

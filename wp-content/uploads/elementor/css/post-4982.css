@@ -1,0 +1,31 @@
+.elementor-4982 .elementor-element.elementor-element-aa0722b{margin-top:50px;margin-bottom:50px;}.elementor-4982 .elementor-element.elementor-element-b8a622a{text-align:center;}.elementor-4982 .elementor-element.elementor-element-b8a622a .elementor-heading-title{color:#000000;font-family:"Stinger", Sans-serif;font-size:30px;font-weight:200;}.elementor-4982 .elementor-element.elementor-element-b8a622a > .elementor-widget-container{margin:0px 0px 25px 0px;}/* Start custom CSS */.wrap-post-item-content a.readmore {
+    border: none;
+    padding: 6px 2px;
+    border-bottom: 2px solid;
+}
+
+.wrap-post-item-content a.readmore:hover {
+    border: none;
+    padding: 6px 8px;
+}
+
+.cafe-posts.default:not(.no-border) .wrap-post-item-content{
+    border: none !important;
+}/* End custom CSS */
+/* Start Custom Fonts CSS */@font-face {
+	font-family: 'Stinger';
+	font-style: normal;
+	font-weight: 200;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-fit-light-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-fit-light-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Stinger';
+	font-style: normal;
+	font-weight: 100;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-wide-thin-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-wide-thin-webfont.woff') format('woff');
+}
+/* End Custom Fonts CSS */

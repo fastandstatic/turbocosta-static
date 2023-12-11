@@ -1,0 +1,20 @@
+.elementor-11093 .elementor-element.elementor-element-64e6d54e{text-align:center;}.elementor-11093 .elementor-element.elementor-element-64e6d54e .elementor-heading-title{color:#000000;font-family:"Stinger", Sans-serif;font-size:40px;font-weight:200;}.elementor-11093 .elementor-element.elementor-element-64e6d54e > .elementor-widget-container{margin:10px 0px 10px 0px;}/* Start custom CSS */.cafe-head-product-filter.has-tabs {
+    display: none;
+}/* End custom CSS */
+/* Start Custom Fonts CSS */@font-face {
+	font-family: 'Stinger';
+	font-style: normal;
+	font-weight: 200;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-fit-light-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-fit-light-webfont.woff') format('woff');
+}
+@font-face {
+	font-family: 'Stinger';
+	font-style: normal;
+	font-weight: 100;
+	font-display: auto;
+	src: url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-wide-thin-webfont.woff2') format('woff2'),
+		url('https://shoplegacee.com/wp-content/uploads/2020/07/stinger-wide-thin-webfont.woff') format('woff');
+}
+/* End Custom Fonts CSS */

@@ -8,8 +8,8 @@
 <channel>
 	<title>
 	Comentarios en Turbo Costa	</title>
-	<atom:link href="/comments/feed/" rel="self" type="application/rss+xml" />
-	<link>/</link>
+	<atom:link href="./index.html" rel="self" type="application/rss+xml" />
+	<link>./../../index.html</link>
 	<description>Repuestos para motores en Colombia</description>
 	<lastBuildDate>Tue, 05 Dec 2023 15:02:37 +0000</lastBuildDate>
 	<sy:updatePeriod>
