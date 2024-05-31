@@ -8,8 +8,8 @@
 <channel>
 	<title>
 	Comentarios en: Privacy Policy	</title>
-	<atom:link href="./index.html" rel="self" type="application/rss+xml" />
-	<link>./../index.html</link>
+	<atom:link href="/privacy-policy/feed/" rel="self" type="application/rss+xml" />
+	<link>/privacy-policy/</link>
 	<description>Repuestos para motores en Colombia</description>
 	<lastBuildDate>Fri, 21 Aug 2020 15:11:24 +0000</lastBuildDate>
 	<sy:updatePeriod>
