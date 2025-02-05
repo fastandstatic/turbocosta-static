@@ -2,7 +2,7 @@
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-image/1.1 http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
 		<loc>/shop/</loc>
-		<lastmod>2024-05-30T21:54:43+00:00</lastmod>
+		<lastmod>2025-01-31T21:04:18+00:00</lastmod>
 	</url>
 	<url>
 		<loc>/shop/bombas-inyeccion/bomba-cummins-celect-ism-11/</loc>
@@ -282,6 +282,13 @@
 		<lastmod>2024-05-30T21:54:43+00:00</lastmod>
 		<image:image>
 			<image:loc>/wp-content/uploads/2024/05/166003xnoa-1.png</image:loc>
+		</image:image>
+	</url>
+	<url>
+		<loc>/shop/inyectores/inyector-mtu-serie-4000/</loc>
+		<lastmod>2025-01-31T21:04:18+00:00</lastmod>
+		<image:image>
+			<image:loc>/wp-content/uploads/2025/01/Inyector-MTU-serie-4000-2-e1738357451150.jpg</image:loc>
 		</image:image>
 	</url>
 </urlset>

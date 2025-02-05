@@ -1,4 +1,4 @@
-.elementor-10887 .elementor-element.elementor-element-cb92fee{text-align:center;}.elementor-10887 .elementor-element.elementor-element-cb92fee .elementor-heading-title{color:#000000;font-family:"Stinger", Sans-serif;font-size:35px;font-weight:100;}/* Start Custom Fonts CSS */@font-face {
+.elementor-widget-heading .elementor-heading-title{font-family:var( --e-global-typography-primary-font-family ), Sans-serif;font-weight:var( --e-global-typography-primary-font-weight );color:var( --e-global-color-primary );}.elementor-10887 .elementor-element.elementor-element-cb92fee{text-align:center;}.elementor-10887 .elementor-element.elementor-element-cb92fee .elementor-heading-title{font-family:"Stinger", Sans-serif;font-size:35px;font-weight:100;color:#000000;}/* Start Custom Fonts CSS */@font-face {
 	font-family: 'Stinger';
 	font-style: normal;
 	font-weight: 200;
