@@ -1,4 +1,4 @@
-/*! elementor - v3.27.0 - 18-02-2025 */
+/*! elementor - v3.29.0 - 04-06-2025 */
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({});
@@ -123,23 +123,28 @@
 /******/ 		// This function allow to reference async chunks
 /******/ 		__webpack_require__.u = (chunkId) => {
 /******/ 			// return url for filenames not based on template
-/******/ 			if (chunkId === "nested-title-keyboard-handler") return "" + chunkId + ".967db65f6ba460c1f2e9.bundle.js";
 /******/ 			if (chunkId === "lightbox") return "" + chunkId + ".74688eb10c7852662847.bundle.js";
-/******/ 			if (chunkId === "text-path") return "" + chunkId + ".acb8842ac7e1cd1dfb44.bundle.js";
+/******/ 			if (chunkId === "text-path") return "" + chunkId + ".795be0048f5240994e8b.bundle.js";
 /******/ 			if (chunkId === "accordion") return "" + chunkId + ".7b5b5744bdd225280eca.bundle.js";
 /******/ 			if (chunkId === "alert") return "" + chunkId + ".b696182ec6f18a35bc69.bundle.js";
 /******/ 			if (chunkId === "counter") return "" + chunkId + ".f359dee9199f5aad06c6.bundle.js";
 /******/ 			if (chunkId === "progress") return "" + chunkId + ".5d8492a023e85c6cc0e0.bundle.js";
 /******/ 			if (chunkId === "tabs") return "tabs.e808857358793ac13db5.bundle.js";
 /******/ 			if (chunkId === "toggle") return "" + chunkId + ".375da8e2f6fed12731c2.bundle.js";
-/******/ 			if (chunkId === "video") return "" + chunkId + ".e031bfad2085ca92d445.bundle.js";
+/******/ 			if (chunkId === "video") return "" + chunkId + ".d862fafddbe5d05459f3.bundle.js";
 /******/ 			if (chunkId === "image-carousel") return "" + chunkId + ".1a3e0c6222562304eed5.bundle.js";
 /******/ 			if (chunkId === "text-editor") return "" + chunkId + ".bd4eccbd156d0b1fc3cf.bundle.js";
 /******/ 			if (chunkId === "wp-audio") return "" + chunkId + ".c91cab3152c3f241f266.bundle.js";
+/******/ 			if (chunkId === "nested-tabs") return "" + chunkId + ".213892f3e7a826d32481.bundle.js";
 /******/ 			if (chunkId === "nested-accordion") return "" + chunkId + ".a0f28ea648b29da812a1.bundle.js";
 /******/ 			if (chunkId === "contact-buttons") return "" + chunkId + ".c21325756a91b795f8e4.bundle.js";
 /******/ 			if (chunkId === "floating-bars") return "" + chunkId + ".7efeeb8b098e55999ff1.bundle.js";
-/******/ 			if (chunkId === "container") return "" + chunkId + ".cb1e834c5aad68e9c908.bundle.js";
+/******/ 			if (chunkId === "shared-frontend-handlers") return "" + chunkId + ".a82dc0e60728c9cb9860.bundle.js";
+/******/ 			if (chunkId === "shared-editor-handlers") return "" + chunkId + ".22c8f376e58bdba40f71.bundle.js";
+/******/ 			if (chunkId === "container-editor-handlers") return "" + chunkId + ".11e3f73cbe2c3c5ffe24.bundle.js";
+/******/ 			if (chunkId === "section-frontend-handlers") return "" + chunkId + ".d0665d28b9f0b188fe4f.bundle.js";
+/******/ 			if (chunkId === "section-editor-handlers") return "" + chunkId + ".46a034cbaaa10c6afa92.bundle.js";
+/******/ 			if (chunkId === "nested-title-keyboard-handler") return "" + chunkId + ".967db65f6ba460c1f2e9.bundle.js";
 /******/ 			// return url for filenames based on template
 /******/ 			return undefined;
 /******/ 		};
